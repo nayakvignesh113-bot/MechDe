@@ -85,6 +85,8 @@ nf = Se(Sut − σi) / [Sut·σa + Se(σm − σi)],  σa = CP/2At = ${fmt(r.sa)
       ctx.fillStyle = '#0f5e8c'; ctx.fillText(`bolt ${fmt(Fb / 1000)} kN`, X(db + dd) + 8, Y(Fb) + 4);
       ctx.fillStyle = '#2f7d32'; ctx.fillText(`members ${fmt(Fm / 1000)} kN${Fm <= 0 ? ' SEPARATED' : ''}`, X(db + dd) + 8, Y(Fm) + 14);
       ctx.fillStyle = '#4a5566'; ctx.fillText(`Fi = ${fmt(B.Fi / 1000)} kN`, 4, Y(B.Fi) - 4);
+      tag(ctx, 'bolt: stretches (slope kb)', X(db * 0.45), Y(B.Fi * 0.45) - 14, '#0f5e8c', 'right', 11);
+      tag(ctx, 'members: compress (slope km)', X(db + dm * 0.6), Y(B.Fi * 0.4) + 4, '#2f7d32', 'left', 11);
     });
   }
 });

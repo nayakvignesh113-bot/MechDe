@@ -6,6 +6,10 @@ Design is the reverse of analysis. MechDe connects the four subjects behind ever
 
 **Kinematics → Kinetics/Dynamics → Strength of Materials → Machine Design → (feedback)**
 
+## Start here
+
+The **How to design with MechDe** page explains how to read any module, gives step-by-step recipes (bicycle drivetrain, motorcycle gearbox, conveyor drive, footbridge, engine, cam, crane jib) and lists what is and is not covered yet.
+
 ## Modules
 
 | Area | Module | What it does |
@@ -21,6 +25,7 @@ Design is the reverse of analysis. MechDe connects the four subjects behind ever
 | | Helical spring | Bergsträsser factor, Zimmerli fatigue, solid-height stress, buckling, surge; wire-size iteration |
 | | Bolted joint | Joint stiffness, preload, separation, Goodman fatigue, thermal preload change, joint diagram |
 | | Columns | Euler / Johnson / Rankine–Gordon / secant; regime map |
+| | Bike drivetrain & gear train | Bicycle: chainrings/cassette, speeds, gear inches, climbing, cross-chaining, chain tension. Motorcycle: ratio spacing, constant-mesh teeth, per-pair gear strength, tractive-effort diagram, final chain |
 | Design thinking | Why is a spanner shaped so? | Length from torque, 15° offset from hex geometry, uniform-strength taper, curved-beam jaw |
 | | Failure case studies | Tacoma Narrows, Hyatt Regency, Comet, Liberty ships, Silver Bridge, Millennium Bridge |
 | | Design notebook | Notes with voice dictation |

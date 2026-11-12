@@ -4,6 +4,7 @@ MD.register('home', {
   render(main) {
     pageHead(main, 'MechDe · Mechanical Design Studio', 'Design is the reverse of analysis',
       'Analysis asks <i>"given this part and this load, what happens?"</i> Design asks <i>"what part, of what shape, size and material, survives this load for its whole life at the lowest cost?"</i> Most design questions have no single formula: you iterate, because the unknown dimension sits inside the very factors that decide it. MechDe lets you build parts and structures, load them, change the environment, and watch which failure mode takes over.');
+    main.append(h('div', { class: 'verdict' }, h('b', null, 'New here?'), h('span', { html: 'Start with <a href="#guide">How to design with MechDe</a>: how to read every module, step-by-step recipes (bicycle drivetrain, motorcycle gearbox, conveyor drive, footbridge, engine, cam), and a list of what is and isn\'t covered yet.' })));
     main.append(h('h2', null, 'The design chain: four subjects, one loop'));
     const ch = h('div', { class: 'chain' });
     const nodes = [
@@ -26,6 +27,7 @@ MD.register('home', {
       ['som', '📐', 'SOM → Design Bridge', 'Mohr\'s circle, failure theories, and how each real-world factor erodes the textbook safety factor.'],
       ['shaft', '🛞', 'Shaft Designer', 'Fatigue (Goodman/Gerber/ASME/Soderberg), deflection, bearing slope, critical speed: which one sets the diameter?'],
       ['gear', '⚙️', 'Spur Gear Designer', 'Lewis beam strength vs Buckingham wear vs Hertz contact; module selection; meshing animation.'],
+      ['drivetrain', '🚲', 'Bike drivetrain & gear train', 'Bicycle chainrings/cassette (speeds, climbing, chain load) and motorcycle gearbox (ratios, teeth, tractive effort, final chain).'],
       ['belt', '➰', 'Belt Drive', 'Flat & V-belts, centrifugal tension, the speed that maximises power, number of belts.'],
       ['spring', '🌀', 'Helical Spring', 'Wahl factor, fatigue (Zimmerli), buckling, surge frequency; wire-size iteration.'],
       ['bolt', '🔩', 'Bolted Joint', 'Preload, joint stiffness, separation, fatigue, and preload loss from thermal mismatch.'],

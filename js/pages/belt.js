@@ -39,10 +39,12 @@ MD.register('belt', {
       if (flat) { const fb = FLAT_BELTS[v.fb]; m = fb.rho * v.t / 1000; /* kg/m per metre width */ Tmax = fb.sig * 1e6 * v.t / 1000; // N per m width
         const Pw = (Tmax - m * vel * vel) * (1 - 1 / Rr) * vel; width = Pd / Pw * 1000; perBelt = Pw; }
       else { const vb = V_BELTS[v.vb]; m = vb.m; Tmax = vb.T; perBelt = (Tmax - m * vel * vel) * (1 - 1 / Rr) * vel; nBelts = Math.ceil(Pd / perBelt - 1e-9); }
+      if (!(perBelt > 0)) { B = null; out.innerHTML = ''; out.append(h('div', { class: 'badbox', html: `<b>At ${fmt(vel)} m/s the belt transmits nothing.</b> Centrifugal tension m·v² = ${fmt(m * vel * vel)} N ${flat ? 'per m width ' : ''}already equals the allowable tension ${fmt(Tmax)} N. Optimum speed is ${fmt(Math.sqrt(Tmax / (3 * m)))} m/s: use a smaller driver pulley or a lower speed.` })); explain('The belt speed is so high that centrifugal tension uses up the whole allowable tension.'); return; }
       const scale = flat ? width / 1000 : 1, T1 = Tmax * scale * (flat ? 1 : 1), Tc = m * vel * vel * scale;
       // actual working tensions for transmitted power
       const Pper = flat ? Pd : Pd / nBelts, dT = Pper / vel; const T1w = Tc + dT * Rr / (Rr - 1), T2w = T1w - dT;
       const vopt = Math.sqrt(Tmax / (3 * m)), shaftLoad = Math.sqrt(T1w ** 2 + T2w ** 2 + 2 * T1w * T2w * Math.cos(Math.PI - theta)) * (flat ? 1 : nBelts);
+      if (Tmax - m * vel * vel <= 0) { B = null; out.innerHTML = ''; out.append(h('div', { class: 'badbox', html: `<b>At ${fmt(vel)} m/s the belt's own centrifugal tension (m·v² = ${fmt(m * vel * vel)} N${flat ? ' per m width' : ''}) exceeds its allowable tension (${fmt(Tmax)} N).</b> It cannot transmit any power. Reduce pulley diameter or speed. Optimum speed is ${fmt(Math.sqrt(Tmax / (3 * m)))} m/s.` })); explain('Belt speed is too high: centrifugal tension uses up all the allowable tension.'); return; }
       B = { v, D, vel, theta, T1w, T2w, nBelts, flat };
       out.innerHTML = '';
       out.append(h('div', { class: 'metrics' },
@@ -86,6 +88,8 @@ P per ${flat ? 'm width' : 'belt'} = (Tmax − m v²)(1 − e^{−μθ}) v = ${f
       ctx.setLineDash([]);
       [[x1, R1, '#c2410c'], [x2, R2, '#475569']].forEach(([x, R, c], k) => { ctx.fillStyle = c + '33'; ctx.strokeStyle = c; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(x, cy, R, 0, 7); ctx.fill(); ctx.stroke();
         const rot = -ph / 10 * (k ? R1 / R2 : 1); for (let s = 0; s < 4; s++) { const an = rot + s * Math.PI / 2; ctx.beginPath(); ctx.moveTo(x, cy); ctx.lineTo(x + R * 0.85 * Math.cos(an), cy + R * 0.85 * Math.sin(an)); ctx.stroke(); } });
+      tag(ctx, 'Driver', x1, cy + R1 + 14, '#c2410c', 'center'); tag(ctx, 'Driven', x2, cy + R2 + 14, '#475569', 'center');
+      tag(ctx, 'Tight side', (x1 + x2) / 2, cy - Math.max(R1, R2) - 10, '#b42318', 'center'); tag(ctx, 'Slack side', (x1 + x2) / 2, cy + Math.max(R1, R2) + 22, '#0f5e8c', 'center');
       ctx.fillStyle = '#1b2430'; ctx.font = '12px IBM Plex Mono, monospace'; ctx.fillText(`tight side ${fmt(B.T1w)} N (red) · slack ${fmt(B.T2w)} N (blue) · wrap ${fmt(B.theta / deg)}°`, 10, 16);
     });
   }

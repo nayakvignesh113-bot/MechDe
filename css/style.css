@@ -127,3 +127,4 @@ details summary{cursor:pointer;font-weight:600;margin:6px 0}
   canvas.anim{height:280px}
   h1{font-size:22px}
 }
+.grid2 > *, .grid3 > *{min-width:0}

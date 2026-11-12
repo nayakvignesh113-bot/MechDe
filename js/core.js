@@ -45,6 +45,12 @@ function bisect(f, a, b, tol = 1e-6, it = 200) { // find x with f(x)=0, f(a), f(
   }
   return 0.5 * (a + b);
 }
+// smallest x in [lo,hi] with f(x) >= 0 for f increasing in x; lo if already satisfied, Infinity if never
+function solveMin(f, lo, hi, tol = 1e-3) {
+  const flo = f(lo); if (!(flo < 0)) return isNaN(flo) ? NaN : lo;
+  const fhi = f(hi); if (!(fhi >= 0)) return Infinity;
+  return bisect(f, lo, hi, tol);
+}
 function store(key, val) { try { if (val === undefined) return JSON.parse(localStorage.getItem('mechde:' + key)); localStorage.setItem('mechde:' + key, JSON.stringify(val)); } catch (e) { return null; } }
 
 /* ---------------- Materials ---------------- */
@@ -186,11 +192,19 @@ function pageHead(main, crumb, title, lead) {
 function buildForm(container, specs, onChange, key, init) {
   const saved = key ? (store('form:' + key) || {}) : {};
   const vals = {}, inputs = {};
+  if (key || init === 'reset') {
+    container.append(h('div', { class: 'toolbar', style: { justifyContent: 'flex-end', margin: '0 0 4px' } }, h('button', { class: 'btn ghost sm', title: 'Restore the default inputs for this module', onclick: () => {
+      for (const k in saved) delete saved[k]; if (key) store('form:' + key, {});
+      specs.forEach(s => { if (!s.id) return; const inp = inputs[s.id]; vals[s.id] = (s.type === 'select' || s.type === 'text') ? s.value : s.type === 'check' ? !!s.value : +s.value;
+        if (s.type === 'check') inp.checked = !!s.value; else { inp.value = s.value; if (inp._slider) inp._slider.value = s.value; } });
+      onChange && onChange(vals, null); toast('Inputs reset to defaults');
+    } }, '↺ Reset to defaults')));
+  }
   for (const s of specs) {
     if (s.section) { container.append(h('div', { class: 'sec-h' }, s.section)); continue; }
     let v = saved[s.id] !== undefined ? saved[s.id] : s.value;
     if (s.type === 'select' && !s.options.map(String).includes(String(v))) v = s.value;
-    vals[s.id] = s.type === 'select' ? v : (s.type === 'check' ? !!v : +v);
+    vals[s.id] = (s.type === 'select' || s.type === 'text') ? v : (s.type === 'check' ? !!v : +v);
     const lab = h('label', { for: 'f_' + s.id, html: s.label + (s.unit ? ` <span class="u">[${s.unit}]</span>` : '') });
     if (s.tip) lab.title = s.tip;
     let inp, row;
@@ -198,6 +212,9 @@ function buildForm(container, specs, onChange, key, init) {
       inp = h('select', { id: 'f_' + s.id }, s.options.map(o => h('option', { value: o }, (s.labels && s.labels[o]) || String(o))));
       inp.value = v;
       row = h('div', { class: 'field sel' + (s.wide ? ' wide' : '') }, lab, inp);
+    } else if (s.type === 'text') {
+      inp = h('input', { type: 'text', id: 'f_' + s.id, value: v, class: 'inp' });
+      row = h('div', { class: 'field wide' }, lab, inp);
     } else if (s.type === 'check') {
       inp = h('input', { type: 'checkbox', id: 'f_' + s.id }); inp.checked = !!v;
       row = h('div', { class: 'field' }, lab, inp);
@@ -212,7 +229,7 @@ function buildForm(container, specs, onChange, key, init) {
       }
     }
     const fire = () => {
-      vals[s.id] = s.type === 'select' ? inp.value : (s.type === 'check' ? inp.checked : parseFloat(inp.value));
+      vals[s.id] = (s.type === 'select' || s.type === 'text') ? inp.value : (s.type === 'check' ? inp.checked : parseFloat(inp.value));
       if (key) { saved[s.id] = vals[s.id]; store('form:' + key, saved); }
       onChange && onChange(vals, s.id);
     };
@@ -220,12 +237,13 @@ function buildForm(container, specs, onChange, key, init) {
     inputs[s.id] = inp; container.append(row);
     MD.fields[s.id] = { spec: s, set: (nv) => {
       if (s.type === 'select') { const o = s.options.find(o => String(o).toLowerCase().includes(String(nv).toLowerCase())); if (!o) return false; inp.value = o; }
+      else if (s.type === 'text') inp.value = nv;
       else if (s.type === 'check') inp.checked = !!nv;
       else { inp.value = nv; if (inp._slider) inp._slider.value = nv; }
       row.classList.add('flash'); setTimeout(() => row.classList.remove('flash'), 900); fire(); return true;
     } };
   }
-  if (init) onChange(vals);
+  if (init === true) onChange(vals);
   return { vals, inputs, set: (id, v) => MD.fields[id] && MD.fields[id].set(v) };
 }
 function metric(label, value, unit, status, title) {
@@ -278,5 +296,17 @@ function setupCanvas(cv) {
   if (cv.width !== Math.round(w * dpr) || cv.height !== Math.round(hh * dpr)) { cv.width = Math.round(w * dpr); cv.height = Math.round(hh * dpr); }
   const ctx = cv.getContext('2d'); ctx.setTransform(dpr, 0, 0, dpr, 0, 0);
   return { ctx, w, h: hh };
+}
+// canvas label with a light halo so it reads over drawings
+function tag(ctx, text, x, y, color = '#1b2430', align = 'left', size = 12, bold = true) {
+  ctx.save(); ctx.font = `${bold ? '600 ' : ''}${size}px IBM Plex Sans, sans-serif`; ctx.textBaseline = 'middle';
+  { const tw = ctx.measureText(text).width, W = ctx.canvas.width / (window.devicePixelRatio || 1), H = ctx.canvas.height / (window.devicePixelRatio || 1);
+    let x0 = align === 'center' ? x - tw / 2 : align === 'right' ? x - tw : x; x0 = clamp(x0, 4, Math.max(4, W - tw - 4)); x = x0; align = 'left'; y = clamp(y, 8, H - 8); }
+  ctx.textAlign = align;
+  ctx.lineWidth = 4; ctx.strokeStyle = 'rgba(255,255,255,0.92)'; ctx.lineJoin = 'round'; ctx.strokeText(text, x, y);
+  ctx.fillStyle = color; ctx.fillText(text, x, y); ctx.restore();
+}
+function canvasLegend(items) { // [[color, text], ...] → HTML legend row
+  return h('div', { class: 'legend' }, items.map(([c, t]) => h('span', null, h('i', { style: { background: c, height: '8px', width: '16px' } }), t)));
 }
 function explain(text) { MD.explain = text; MD.lastExplain = { page: MD.current, text }; }

@@ -51,7 +51,7 @@ MD.register('structure', {
     top.append(presetSel, h('span', { class: 'sep' }));
     tools.forEach(([k, l]) => { const b = h('button', { class: 'btn ghost sm', onclick: () => { st.tool = k; st.pendingA = null; Object.values(toolBtns).forEach(x => x.classList.remove('on')); b.classList.add('on'); hint(); } }, l); toolBtns[k] = b; top.append(b); });
     toolBtns.move.classList.add('on');
-    top.append(h('span', { class: 'sep' }), h('button', { class: 'btn ghost sm', onclick: () => { if (confirmBox('Clear the model?')) { M = toModel({ nodes: [], members: [] }); save(); refreshAll(); } } }, 'Clear'));
+    top.append(h('span', { class: 'sep' }), h('button', { class: 'btn ghost sm', onclick: () => { M = toModel({ nodes: [], members: [] }); save(); refreshAll(); } }, 'Clear'), h('button', { class: 'btn ghost sm', title: 'Reload the default footbridge model', onclick: () => { M = toModel(PRESETS['Pratt truss footbridge 24 m']()); st.sel = st.selM = null; envelope = null; modes = null; save(); refreshAll(); toast('Model reset'); } }, '↺ Reset'));
     const viewBar = h('div', { class: 'toolbar' }); main.append(viewBar);
     const views = [['util', 'Utilisation'], ['def', 'Deformed'], ['axial', 'Axial forces'], ['bmd', 'Bending moment'], ['mode', 'Mode shape']], vBtns = {};
     viewBar.append(h('span', { class: 'small' }, 'View: '));

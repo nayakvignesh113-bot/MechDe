@@ -77,6 +77,9 @@ MD.register('spanner', {
       ctx.fillStyle = '#94a3b8'; ctx.strokeStyle = '#1b2430'; ctx.lineWidth = 1.5; ctx.beginPath();
       for (let j = 0; j < 6; j++) { const a = j * Math.PI / 3 + Math.PI / 6, r = af / 2 / Math.cos(Math.PI / 6) * sc * 0.98; j ? ctx.lineTo(r * Math.cos(a), r * Math.sin(a)) : ctx.moveTo(r * Math.cos(a), r * Math.sin(a)); }
       ctx.closePath(); ctx.fill(); ctx.stroke(); ctx.fillStyle = '#475569'; ctx.beginPath(); ctx.arc(0, 0, af * 0.22 * sc, 0, 7); ctx.fill(); ctx.restore();
+      tag(ctx, 'Nut (hexagon)', cx, cy + af * 1.05 * sc + 14, '#475569', 'center', 11);
+      tag(ctx, 'Handle (tapered cantilever)', cx + Math.cos(handleAng) * Lp * 0.6, cy - Math.sin(handleAng) * Lp * 0.6 - 22, '#c2410c', 'center', 11);
+      tag(ctx, 'Jaw at 15° to handle', cx - af * 1.2 * sc, cy - af * 1.2 * sc, '#9a3412', 'left', 11);
       // obstruction showing the 30° swing window
       ctx.strokeStyle = '#64748b'; ctx.setLineDash([5, 4]);
       [handleAng - swing, handleAng - swing + sw].forEach(a => { ctx.beginPath(); ctx.moveTo(cx, cy); ctx.lineTo(cx + Math.cos(a) * Lp * 1.05, cy - Math.sin(a) * Lp * 1.05); ctx.stroke(); }); ctx.setLineDash([]);

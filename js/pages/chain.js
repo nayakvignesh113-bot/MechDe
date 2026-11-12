@@ -27,7 +27,9 @@ MD.register('chain', {
         const Pxx = sc * A / (1 + a * Lm * Lm / kxx2), Pyy = sc * A / (1 + a * (Lm / 2) ** 2 / kyy2);
         return { A, Pxx, Pyy, n: Math.min(Pxx, Pyy) / Fc };
       };
-      const t = bisect(tt => need(tt).n - v.nb, 0.3, 60, 1e-4);
+      let t = Fc > 1 ? solveMin(tt => need(tt).n - v.nb, 0.3, 250, 1e-4) : NaN;
+      const tTen = Math.sqrt(Ft * v.nb / sc / 11); // size so tension stays below Sy/nb
+      if (!isFinite(t) || tTen > t) t = Math.max(isFinite(t) ? t : 0, tTen);
       const r = need(t);
       const rodShank = m.rho * r.A * 1e-6 * (Lm / 1000); // kg
       const mRod = rodShank * 1.6; // + big/small end eyes, bolts (≈60 % of shank, typical)
@@ -35,10 +37,11 @@ MD.register('chain', {
       const sWhip = wq * e.w ** 2 * (e.r * 1000) * Lm * Lm / (9 * Math.sqrt(3) * Z) / 1000; // N/mm² (kg/mm·1/s²·mm·mm²/mm³ = kg/(s²·mm) → /1000 → N/mm²)
       const sAx = Fc / r.A;
       const dpin = Math.sqrt(Fc / (1.5 * v.pp)), dcrank = Math.sqrt(Fc / (1.25 * v.pb));
-      return { e, Fc, Ft, t, A: r.A, Pxx: r.Pxx, Pyy: r.Pyy, mRod, sWhip, sAx, dpin, dcrank, govPlane: r.Pxx < r.Pyy ? 'in-plane (x–x, pinned ends)' : 'out-of-plane (y–y, fixed ends)' };
+      return { e, Fc, Ft, t, A: r.A, Pxx: r.Pxx, Pyy: r.Pyy, mRod, sWhip, sAx, dpin, dcrank, govPlane: Math.abs(t - tTen) < 1e-6 ? 'tension from inertia (not buckling)' : r.Pxx < r.Pyy ? 'in-plane (x–x, pinned ends)' : 'out-of-plane (y–y, fixed ends)' };
     }
     function run(v) {
       V = v; const m = matAt(v.mat);
+      if (v.l / (v.S / 2) < 2.5) { E = null; chainBox.innerHTML = ''; out.innerHTML = ''; iterBox.innerHTML = ''; out.append(h('div', { class: 'badbox', html: `<b>Connecting rod too short:</b> l/r = ${fmt(v.l / (v.S / 2))}. Rods are normally 3–4.5 × crank radius (here ≥ ${fmt(1.5 * v.S)} mm). Short rods raise obliquity, side thrust and secondary inertia forces; below l/r ≈ 1 the mechanism cannot even rotate.` })); explain('The connecting rod is too short for this stroke.'); return; }
       // iterate: rod mass ↔ reciprocating mass ↔ inertia force ↔ rod size
       const it = []; let mrec = v.mp, d;
       for (let k = 0; k < 12; k++) {
@@ -74,7 +77,7 @@ MD.register('chain', {
       const pc = plotCanvas(); card.append(h('div', { class: 'panel-title', style: { marginTop: '10px' } }, 'Which load dominates as speed rises?'), pc);
       plot(pc, { xlabel: 'Engine speed (rpm)', ylabel: 'MPa', legend: 'tl', vlines: [{ x: v.rpm }], series: [{ label: 'Axial (buckling-driven) stress Fc/A', x: rpms, y: tt.map(q => q.Fc / d.A) }, { label: 'Whipping stress (∝ ω²) at this section', x: rpms, y: tt.map(q => { const Z = 419 / 12 * d.t ** 4 / (2.5 * d.t); return m.rho * d.A * 1e-9 * q.e.w ** 2 * q.e.r * 1000 * v.l ** 2 / (9 * Math.sqrt(3) * Z) / 1000; }) }] });
       const cross = rpms.find((n, i) => { const Z = 419 / 12 * d.t ** 4 / (2.5 * d.t); return m.rho * d.A * 1e-9 * tt[i].e.w ** 2 * tt[i].e.r * 1000 * v.l ** 2 / (9 * Math.sqrt(3) * Z) / 1000 > tt[i].Fc / d.A; });
-      verdict(card, nYield >= 2 ? true : null, `Rod: I-section ${fmt(4 * d.t)} × ${fmt(5 * d.t)} mm, web/flange t = ${fmt(d.t)} mm; buckling governs ${d.govPlane}`,
+      verdict(card, nYield >= 2 ? true : null, `Rod: I-section ${fmt(4 * d.t)} × ${fmt(5 * d.t)} mm, web/flange t = ${fmt(d.t)} mm; governed by ${d.govPlane.startsWith('tension') ? '' : 'buckling '}${d.govPlane}`,
         `Gas pressure sets the peak compressive force, so buckling sizes the section. Whipping (inertia bending of the swinging rod) grows with ω² and ${cross ? `would overtake axial stress near <b>${Math.round(cross)} rpm</b>: high-speed rods are designed against inertia, not gas load` : 'stays secondary across the speed range'}. The section is I-shaped because I<sub>xx</sub> ≈ 3.2 I<sub>yy</sub> matches the 4:1 effective-length ratio (pinned in-plane, near-fixed out-of-plane), so both planes are about equally strong with the least metal.`);
       card.append(h('div', { class: 'eq' }, `Rankine–Gordon: P_cr = σc·A / (1 + a (Le/k)²),  a = σc/(π²E) = 1/${fmt(Math.PI ** 2 * m.E / m.Sy, 4)}
 x–x: Le = l = ${v.l} mm, k² = 3.18t²     y–y: Le = l/2, k² = 0.99t²
@@ -114,6 +117,12 @@ Whipping: σ_b = m'·ω²·r·l² / (9√3·Z_xx),  m' = ρA per unit length`));
       const ux = (px - A[0]) / Math.hypot(px - A[0], cy - A[1]), uy = (cy - A[1]) / Math.hypot(px - A[0], cy - A[1]);
       const mx = (A[0] + px) / 2, my = (A[1] + cy) / 2 - 18;
       ctx.strokeStyle = o.Frod > 0 ? '#b42318' : '#0f5e8c'; ctx.lineWidth = 3; ctx.beginPath(); ctx.moveTo(mx - ux * len / 2, my - uy * len / 2); ctx.lineTo(mx + ux * len / 2, my + uy * len / 2); ctx.stroke();
+      tag(ctx, 'Crank', (cx + A[0]) / 2, (cy + A[1]) / 2 - 14, '#c2410c', 'center');
+      tag(ctx, 'Connecting rod', (A[0] + px) / 2, (A[1] + cy) / 2 + 18, '#0f5e8c', 'center');
+      tag(ctx, 'Piston', px, cy + bore / 2 + 14, '#475569', 'center');
+      tag(ctx, 'Cylinder (gas)', xt + 20, cy - bore / 2 - 14, '#c2410c', 'center');
+      tag(ctx, 'Crankshaft centre', cx, cy + r * sc + 16, '#1b2430', 'center', 11, false);
+      tag(ctx, 'rod force (red = compression, blue = tension)', mx, my - 14, '#64748b', 'center', 11, false);
       const stroke = ['power', 'exhaust', 'intake', 'compression'][Math.floor(th / 180) % 4];
       ctx.fillStyle = '#1b2430'; ctx.font = '12px IBM Plex Mono, monospace';
       ctx.fillText(`θ = ${Math.round(th)}° (${stroke})   p = ${fmt(o.p)} MPa   rod ${o.Frod > 0 ? 'compression' : 'tension'} ${fmt(Math.abs(o.Frod) / 1000)} kN   a = ${fmt(o.a)} m/s²`, 10, 18);

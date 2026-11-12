@@ -15,7 +15,9 @@ MD.register('environment', {
       { id: 'wind', label: 'Basic wind speed (structures)', unit: 'm/s', value: ENV.wind, min: 0, max: 60, step: 1, aliases: ['wind'] },
     ];
     L.append(h('div', { class: 'panel-title' }, 'Environment'));
-    buildForm(L, specs, (v) => { Object.assign(ENV, { T: v.T, Tinstall: v.Tinstall, medium: v.medium, rel: +v.rel, life: v.life, wind: v.wind }); MD.envChanged(); draw(); });
+    const ef = buildForm(L, specs.map(sp => Object.assign({}, sp, { value: { T: 25, Tinstall: 25, medium: MEDIA[0], rel: '0.99', life: 25, wind: 0 }[sp.id] })), (v) => { Object.assign(ENV, { T: v.T, Tinstall: v.Tinstall, medium: v.medium, rel: +v.rel, life: v.life, wind: v.wind }); MD.envChanged(); draw(); }, null, 'reset');
+    // show current (possibly non-default) values
+    specs.forEach(sp => { ef.vals[sp.id] = sp.type === 'select' ? String(sp.value) : +sp.value; const el = $('#f_' + sp.id); if (el) { el.value = sp.value; if (el._slider) el._slider.value = sp.value; } });
     const c1 = plotCanvas(), c2 = plotCanvas(), out = h('div');
     R.append(h('div', { class: 'card' }, h('div', { class: 'panel-title' }, 'Strength retention vs temperature'), c1, h('div', { class: 'panel-title', style: { marginTop: '12px' } }, 'Elastic modulus retention vs temperature'), c2), out);
     const classes = [['steel', 'Steel (Shigley Sut ratio)'], ['aluminium', 'Al alloys (age-hardened)'], ['titanium', 'Ti-6Al-4V'], ['castiron', 'Grey cast iron']];

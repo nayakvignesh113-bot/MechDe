@@ -113,7 +113,7 @@ MD.register('shaft', {
     let V, SM, Dsel;
     function requiredDiameters(v, m) {
       const sm = shaftModel(v), lim = BEARING_SLOPE[v.brg];
-      const solve = f => bisect(f, 3, 600, 1e-3);
+      const solve = f => solveMin(f, 3, 600, 1e-3);
       const d = {};
       ['Goodman', 'Gerber', 'ASME elliptic', 'Soderberg'].forEach(c => d['Fatigue: ' + c] = solve(dd => shaftFatigue(sm, dd, v, m).n[c] - v.nf));
       d['First-cycle yield'] = solve(dd => shaftFatigue(sm, dd, v, m).ny - v.nf);
@@ -127,8 +127,11 @@ MD.register('shaft', {
       V = v; const m = matAt(v.mat);
       const { sm, d } = requiredDiameters(v, m); SM = sm;
       const crit = ['Fatigue: Goodman', 'First-cycle yield', 'Deflection at elements', 'Slope at bearings', 'Gear slope < 0.0005 rad', 'Critical speed'];
-      const govK = crit.filter(k => isFinite(d[k])).reduce((a, b) => d[b] > d[a] ? b : a, 'Fatigue: Goodman');
-      const dreq = d[govK], dstd = STD_D.find(x => x >= dreq) || Math.ceil(dreq / 10) * 10; Dsel = dstd;
+      const govK = crit.filter(k => !isNaN(d[k])).reduce((a, b) => d[b] > d[a] ? b : a, 'Fatigue: Goodman');
+      const dreq = d[govK];
+      if (!isFinite(dreq)) { out.innerHTML = ''; out.append(h('div', { class: 'badbox', html: `<b>No solid shaft up to Ø600 mm satisfies "${govK}".</b> Shorten the span, move elements toward the bearings, reduce speed or relax the limit.` })); explain('No practical diameter satisfies ' + govK); SM = sm; Dsel = 600; return; }
+      if (!sm.els.length) { out.innerHTML = '<div class="badbox">Add at least one gear or pulley.</div>'; return; }
+      const dstd = STD_D.find(x => x >= dreq) || Math.ceil(dreq / 10) * 10; Dsel = dstd;
       const fa = shaftFatigue(sm, dstd, v, m), df = shaftDeflect(sm, dstd, m.E), wc = shaftCritical(sm, dstd, m.E, m.rho);
       out.innerHTML = '';
       out.append(h('div', { class: 'metrics' },
@@ -139,6 +142,7 @@ MD.register('shaft', {
         metric('1st critical speed', fmt(wc * 60 / 2 / Math.PI), 'rpm', wc / sm.w >= v.cm ? 'good' : 'bad')));
       const box = h('div', { style: { marginTop: '6px' } }); out.append(box);
       const gov = dominanceBars(box, crit.filter(k => isFinite(d[k])).map(k => ({ k, v: d[k] })), 'mm', 'Minimum diameter demanded by each failure mode');
+      if (sm.els.length < 2) out.append(h('div', { class: 'note' }, 'Only one element: no torque is transmitted along the shaft (it acts as an axle carrying bending only).'));
       const reason = {
         'Fatigue: Goodman': 'Bending reverses every revolution. The notch and surface finish cut the endurance strength, so <b>strength (fatigue)</b> governs. Better material, a gentler fillet or a ground finish pay off directly.',
         'First-cycle yield': 'Peak (overload) stress governs. Higher yield strength helps directly.',
@@ -185,6 +189,8 @@ DE-Goodman: d = [16n/π · ( √(4(Kf·Ma)² + 3(Kfs·Ta)²)/Se + √(4(Kf·Mm)�
       SM.els.forEach(e => { const hgt = Math.min(H * 0.42, Math.max(20, e.D * sx * 0.5)); ctx.fillStyle = e.type.startsWith('Spur') ? '#c2410c' : '#0f5e8c'; ctx.globalAlpha = 0.85; ctx.fillRect(x0 + e.a * sx - 9, cy - hgt, 18, 2 * hgt); ctx.globalAlpha = 1;
         if (e.type.startsWith('Spur')) for (let k = -3; k <= 3; k++) { ctx.fillStyle = '#7c2d12'; ctx.fillRect(x0 + e.a * sx - 9, cy + hgt * Math.sin(ang * 2 + k * 0.45) * 0.95, 18, 3); } });
       ctx.strokeStyle = '#b42318'; ctx.setLineDash([4, 3]); ctx.beginPath(); ctx.moveTo(x0 + SM.xc * sx, 6); ctx.lineTo(x0 + SM.xc * sx, H - 6); ctx.stroke(); ctx.setLineDash([]);
+      tag(ctx, 'Bearing A', x0, cy + rs + 26, '#1b2430', 'center', 11); tag(ctx, 'Bearing B', x0 + SM.L * sx, cy + rs + 26, '#1b2430', 'center', 11);
+      SM.els.forEach((e, i) => tag(ctx, `${i ? 'Output' : 'Input'}: ${e.type.split(' (')[0]}`, x0 + e.a * sx, H - 10, e.type.startsWith('Spur') ? '#c2410c' : '#0f5e8c', 'center', 11));
       ctx.fillStyle = '#1b2430'; ctx.font = '11px IBM Plex Sans, sans-serif'; ctx.fillText(`Ø${Dsel} mm shaft · bearings (black) · critical section (red)`, 8, 14);
     });
   }

@@ -120,7 +120,8 @@ function balancing(body) {
     ctx.lineWidth = 2;
     for (let i = 1; i < pts.length; i++) { ctx.strokeStyle = '#0f5e8c'; ctx.beginPath(); ctx.moveTo(px0 + pts[i - 1][0] * sc, py0 - pts[i - 1][1] * sc); ctx.lineTo(px0 + pts[i][0] * sc, py0 - pts[i][1] * sc); ctx.stroke(); }
     ctx.strokeStyle = '#c2410c'; ctx.setLineDash([5, 3]); ctx.beginPath(); ctx.moveTo(px0 + sx * sc, py0 - sy * sc); ctx.lineTo(px0, py0); ctx.stroke(); ctx.setLineDash([]);
-    ctx.fillStyle = '#4a5566'; ctx.font = '11px IBM Plex Sans, sans-serif'; ctx.fillText('m·r vector polygon (closing vector = balance)', w * 0.52, 18);
+    tag(ctx, 'Rotor: masses m1–m4 (blue)', cx, 16, '#0f5e8c', 'center'); tag(ctx, 'balancing mass (orange)', cx, H - 12, '#c2410c', 'center');
+    tag(ctx, 'm·r vector polygon (closing vector = balance)', w * 0.72, 16, '#1b2430', 'center');
   });
 }
 

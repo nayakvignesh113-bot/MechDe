@@ -25,7 +25,7 @@ function fourBar(body) {
     { id: 'branch', label: 'Assembly', type: 'select', options: ['open', 'crossed'], value: 'open' },
   ];
   const cv = plotCanvas('anim'), c1 = plotCanvas(), c2 = plotCanvas(), info = h('div');
-  R.append(h('div', { class: 'card' }, cv, info), h('div', { class: 'grid3', style: { marginTop: '12px' } }, h('div', { class: 'card' }, c1), h('div', { class: 'card' }, c2)));
+  R.append(h('div', { class: 'card' }, cv, canvasLegend([['#94a3b8', 'r1 ground link (fixed frame)'], ['#c2410c', 'r2 crank: input, driven by motor'], ['#0f5e8c', 'r3 coupler: floating link'], ['#2f7d32', 'r4 rocker: output'], ['#c2410c55', 'path traced by coupler point P']]), info), h('div', { class: 'grid3', style: { marginTop: '12px' } }, h('div', { class: 'card' }, c1), h('div', { class: 'card' }, c2)));
   let V, sol = null;
   function pos(v, t2) {
     const A = [v.r2 * Math.cos(t2), v.r2 * Math.sin(t2)], O4 = [v.r1, 0];
@@ -53,6 +53,24 @@ function fourBar(body) {
     else type = 'Double rocker (coupler is shortest and rotates fully)';
     const N = 361, t2s = linspace(0, 2 * Math.PI, N), recs = t2s.map(t => pos(v, t));
     const ok = recs.map(r => !!r), valid = ok.filter(Boolean).length;
+    if (!valid) {
+      sol = null; info.innerHTML = '';
+      { // draw the open (non-closing) chain so the user sees why
+        const { ctx, w, h: H } = setupCanvas(cv); ctx.clearRect(0, 0, w, H);
+        const tot = v.r1 + Math.max(v.r2, 0), sc = (w - 60) / Math.max(v.r1 + v.r2 + 20, v.r3 + v.r4, v.r1) * 0.9, oy = H * 0.62, ox = 30 + v.r2 * sc;
+        const O2 = [ox, oy], O4 = [ox + v.r1 * sc, oy], A = [ox - v.r2 * sc, oy];
+        const link = (a, b, col) => { ctx.strokeStyle = col; ctx.lineWidth = 7; ctx.lineCap = 'round'; ctx.beginPath(); ctx.moveTo(...a); ctx.lineTo(...b); ctx.stroke(); };
+        ctx.setLineDash([6, 4]); ctx.strokeStyle = '#94a3b8'; ctx.lineWidth = 2; ctx.beginPath(); ctx.moveTo(...O2); ctx.lineTo(...O4); ctx.stroke(); ctx.setLineDash([]);
+        link(O2, A, '#c2410c');
+        const reach3 = [A[0] + v.r3 * sc * 0.8, oy - v.r3 * sc * 0.6]; link(A, reach3, '#0f5e8c');
+        const reach4 = [O4[0] - v.r4 * sc * 0.8, oy - v.r4 * sc * 0.6]; link(O4, reach4, '#2f7d32');
+        ctx.strokeStyle = '#b42318'; ctx.setLineDash([3, 3]); ctx.lineWidth = 1.5; ctx.beginPath(); ctx.moveTo(...reach3); ctx.lineTo(...reach4); ctx.stroke(); ctx.setLineDash([]);
+        ctx.fillStyle = '#b42318'; ctx.font = '600 13px IBM Plex Sans, sans-serif'; ctx.fillText('Coupler and rocker cannot meet: gap shown in red', 12, 22);
+      }
+      info.append(h('div', { class: 'badbox', html: `<b>This linkage cannot be assembled at any crank angle.</b> The longest link (${fmt(l)}) must be shorter than the sum of the other three (${fmt(s + pq)}), and the coupler and rocker must be able to reach each other. Shorten the longest link.` }));
+      [c1, c2].forEach(cc => cc.getContext('2d').clearRect(0, 0, cc.width, cc.height));
+      explain('This linkage cannot be assembled. The longest link must be shorter than the sum of the other three.'); return;
+    }
     const w2 = v.rpm * 2 * Math.PI / 60;
     const t4 = unwrap(recs.map(r => r ? r.t4 : NaN).map((x, i, a) => isNaN(x) ? (a[i - 1] ?? 0) : x));
     const dt = 2 * Math.PI / (N - 1);
@@ -111,8 +129,18 @@ function fourBar(body) {
     [O2, r.O4].forEach(p => { ctx.fillStyle = '#1b2430'; ctx.beginPath(); ctx.moveTo(X(p), Y(p)); ctx.lineTo(X(p) - 9, Y(p) + 13); ctx.lineTo(X(p) + 9, Y(p) + 13); ctx.fill(); });
     [r.A, r.B, O2, r.O4].forEach(p => { ctx.fillStyle = '#fff'; ctx.strokeStyle = '#1b2430'; ctx.lineWidth = 2; ctx.beginPath(); ctx.arc(X(p), Y(p), 5, 0, 7); ctx.fill(); ctx.stroke(); });
     ctx.fillStyle = '#c2410c'; ctx.beginPath(); ctx.arc(X(r.P), Y(r.P), 5, 0, 7); ctx.fill();
+    const small = w < 520, cxm = (X(O2) + X(r.O4) + X(r.A) + X(r.B)) / 4, cym = (Y(O2) + Y(r.O4) + Y(r.A) + Y(r.B)) / 4;
+    const lab = (a, b, text, col) => { const mx = (X(a) + X(b)) / 2, my = (Y(a) + Y(b)) / 2; let nx = -(Y(b) - Y(a)), ny = X(b) - X(a); const n = Math.hypot(nx, ny) || 1; nx /= n; ny /= n;
+      if ((mx + nx - cxm) * nx + (my + ny - cym) * ny < 0) { nx = -nx; ny = -ny; } // push label outward
+      tag(ctx, text, mx + nx * 16, my + ny * 16, col, nx > 0.3 ? 'left' : nx < -0.3 ? 'right' : 'center', small ? 11 : 12); };
+    lab(O2, r.O4, small ? 'r1 ground' : 'r1 · ground (fixed)', '#64748b');
+    lab(O2, r.A, small ? 'r2 crank' : 'r2 · crank (input)', '#c2410c');
+    lab(r.A, r.B, small ? 'r3 coupler' : 'r3 · coupler', '#0f5e8c');
+    lab(r.O4, r.B, small ? 'r4 rocker' : 'r4 · rocker (output)', '#2f7d32');
+    tag(ctx, 'O2', X(O2) - 8, Y(O2) + 20, '#1b2430', 'right', 11); tag(ctx, 'O4', X(r.O4) + 8, Y(r.O4) + 20, '#1b2430', 'left', 11);
+    tag(ctx, 'A', X(r.A) - 10, Y(r.A), '#1b2430', 'right', 11); tag(ctx, 'B', X(r.B) + 10, Y(r.B), '#1b2430', 'left', 11);
+    tag(ctx, 'P', X(r.P) + 9, Y(r.P) - 9, '#c2410c', 'left', 11);
     ctx.fillStyle = '#1b2430'; ctx.font = '12px IBM Plex Mono, monospace'; ctx.fillText(`θ2 = ${fmt(((t2 / deg) % 360 + 360) % 360, 3)}°   μ = ${fmt(r.mu / deg, 3)}°`, 10, 18);
-    ctx.font = '11px IBM Plex Sans, sans-serif'; ctx.fillStyle = '#4a5566'; ctx.fillText('crank (orange) · coupler (blue) · rocker (green) · coupler curve', 10, H - 8);
   });
 }
 
@@ -214,6 +242,10 @@ function cam(body) {
     ctx.beginPath(); for (let k = 0; k <= 720; k += 4) { const x = gx + gw * k / 720, y = gy + gh - gh * S.s[k] / v.hft; k ? ctx.lineTo(x, y) : ctx.moveTo(x, y); } ctx.strokeStyle = '#0f5e8c'; ctx.stroke();
     const mx = gx + gw * ang / 360; ctx.fillStyle = '#c2410c'; ctx.beginPath(); ctx.arc(mx, gy + gh - gh * sNow / v.hft, 4, 0, 7); ctx.fill();
     ctx.fillStyle = '#4a5566'; ctx.font = '11px IBM Plex Sans, sans-serif'; ctx.fillText('follower lift vs cam angle', gx, gy - 6);
+    tag(ctx, 'Cam (rotates)', cx + (v.Rb * 0.2) * sc, cy + (v.Rb + v.hft) * 0.55 * sc, '#0f5e8c', 'center');
+    tag(ctx, 'Roller follower', cx + v.Rr * sc + 8, yR, '#c2410c', 'left');
+    tag(ctx, 'Return spring', cx + 20, (top + bot) / 2, '#2f7d32', 'left');
+    tag(ctx, 'pitch curve (dashed)', cx - Rmax * sc * 0.75, cy - Rmax * sc * 0.75, '#64748b', 'center', 11, false);
     ctx.font = '12px IBM Plex Mono, monospace'; ctx.fillStyle = '#1b2430'; ctx.fillText(`θ = ${fmt(ang, 3)}°  s = ${fmt(sNow)} mm`, 10, H - 10);
   });
 }

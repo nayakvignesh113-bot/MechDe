@@ -109,6 +109,9 @@ Hertz:      σH = ZE·√(Wt·Kv·Ko·Km / (b·dp·I)),  ZE = 191 √MPa (steel/
       // line of action
       const px = cx1 + r1 * sc, L = 1.6 * mm * sc / Math.sin(phi) ; ctx.strokeStyle = '#2f7d32'; ctx.beginPath(); ctx.moveTo(px - L * Math.sin(phi), cy - L * Math.cos(phi)); ctx.lineTo(px + L * Math.sin(phi), cy + L * Math.cos(phi)); ctx.stroke(); ctx.setLineDash([]);
       [cx1, cx2].forEach(x => { ctx.fillStyle = '#1b2430'; ctx.beginPath(); ctx.arc(x, cy, 4, 0, 7); ctx.fill(); });
+      tag(ctx, `Pinion (driver, z = ${z1})`, cx1, cy + (r1 + 1.5 * mm) * sc + 12, '#c2410c', 'center');
+      tag(ctx, `Gear (driven, z = ${z2})`, cx2, cy + (r2 + 1.5 * mm) * sc + 12 > H - 8 ? H - 10 : cy + (r2 + 1.5 * mm) * sc + 12, '#0f5e8c', 'center');
+      tag(ctx, 'pitch point', px + 6, cy - 10, '#2f7d32', 'left', 11);
       ctx.fillStyle = '#1b2430'; ctx.font = '12px IBM Plex Mono, monospace'; ctx.fillText(`m ${mm} · z ${z1}:${z2} · involute 20° · green = line of action`, 10, 16);
     });
   }
