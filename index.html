@@ -1,0 +1,49 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>MechDe — Mechanical Design Studio</title>
+<meta name="description" content="Build, simulate and design machine elements and structures: kinematics, dynamics, strength of materials and design in one connected studio.">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link href="https://fonts.googleapis.com/css2?family=IBM+Plex+Mono:wght@400;600&family=IBM+Plex+Sans:wght@400;500;600;700&display=swap" rel="stylesheet">
+<link rel="stylesheet" href="css/style.css">
+</head>
+<body>
+<header id="topbar">
+  <button id="menuBtn" aria-label="Menu">☰</button>
+  <a href="#home" class="brand"><span class="logo">⚙</span> MechDe <small>Design Studio</small></a>
+  <div class="tb-right">
+    <button id="envBtn" class="chip" title="Operating environment applied to every module">🌡 <span id="envSummary">25 °C · dry air</span></button>
+    <button id="voiceBtn" class="chip" title="Voice commands: 'set power to 15', 'go to gear', 'explain'">🎙 Voice</button>
+    <button id="speakBtn" class="chip" title="Read the current verdict aloud">🔊 Explain</button>
+  </div>
+</header>
+<nav id="sidebar"></nav>
+<main id="main"></main>
+<div id="voiceToast" class="toast hidden"></div>
+<div id="modal" class="modal hidden"><div class="modal-box"><button class="modal-x" aria-label="Close">×</button><div class="modal-body"></div></div></div>
+
+<script src="js/core.js"></script>
+<script src="js/plot.js"></script>
+<script src="js/voice.js"></script>
+<script src="js/fem.js"></script>
+<script src="js/pages/home.js"></script>
+<script src="js/pages/env.js"></script>
+<script src="js/pages/som.js"></script>
+<script src="js/pages/kinematics.js"></script>
+<script src="js/pages/dynamics.js"></script>
+<script src="js/pages/chain.js"></script>
+<script src="js/pages/structure.js"></script>
+<script src="js/pages/shaft.js"></script>
+<script src="js/pages/gear.js"></script>
+<script src="js/pages/belt.js"></script>
+<script src="js/pages/spring.js"></script>
+<script src="js/pages/bolt.js"></script>
+<script src="js/pages/column.js"></script>
+<script src="js/pages/spanner.js"></script>
+<script src="js/pages/cases.js"></script>
+<script src="js/pages/notebook.js"></script>
+<script>MD.start();</script>
+</body>
+</html>
