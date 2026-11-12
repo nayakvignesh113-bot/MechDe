@@ -6,6 +6,12 @@ Design is the reverse of analysis. MechDe connects the four subjects behind ever
 
 **Kinematics → Kinetics/Dynamics → Strength of Materials → Machine Design → (feedback)**
 
+## Built for beginners
+
+- **Simple / Expert** switch: beginners see only the key inputs; every input has an ⓘ plain-language explanation.
+- Every page opens with **What this page does** and a **Try this** experiment, and has a **📘 equations panel** (meaning of every symbol and what happens when each parameter changes) plus a live **🔬 effect-of-parameters** table.
+- The home page has a clickable **design flowchart**: need → requirements → concepts → kinematics → loads → stresses → failure modes → material → size & shape (loop) → detail → test (loop) → production & feedback (loop).
+
 ## Start here
 
 The **How to design with MechDe** page explains how to read any module, gives step-by-step recipes (bicycle drivetrain, motorcycle gearbox, conveyor drive, footbridge, engine, cam, crane jib) and lists what is and is not covered yet.
@@ -25,8 +31,19 @@ The **How to design with MechDe** page explains how to read any module, gives st
 | | Helical spring | Bergsträsser factor, Zimmerli fatigue, solid-height stress, buckling, surge; wire-size iteration |
 | | Bolted joint | Joint stiffness, preload, separation, Goodman fatigue, thermal preload change, joint diagram |
 | | Columns | Euler / Johnson / Rankine–Gordon / secant; regime map |
+| | Helical, bevel, worm & planetary | Virtual teeth, axial thrust, cone geometry, worm efficiency & self-locking, heat balance, Willis equation, planetary assembly checks |
+| | Bearings | Ball/roller L10 life with reliability factor and catalogue selection; journal bearing (Sommerfeld, Ocvirk film thickness, Petroff friction, Trumpler limit) |
+| | Keys, splines & couplings | Key shear/crushing length, spline engagement, rigid flange vs flexible bush coupling |
+| | Clutches & brakes | Plate (uniform wear/pressure), cone (jamming), vehicle disc brake energy & temperature, band brake |
+| | Welded & riveted joints | Eccentric fillet-weld group, riveted joint efficiency vs pitch |
+| | Power screws | Raise/lower torque, self-locking, efficiency, screw buckling, nut length |
+| | Pressure vessels & curved beams | Thin/thick (Lamé) shells, hemispherical/elliptical/flat ends, Winkler–Bach crane hook |
 | | Bike drivetrain & gear train | Bicycle: chainrings/cassette, speeds, gear inches, climbing, cross-chaining, chain tension. Motorcycle: ratio spacing, constant-mesh teeth, per-pair gear strength, tractive-effort diagram, final chain |
-| Design thinking | Why is a spanner shaped so? | Length from torque, 15° offset from hex geometry, uniform-strength taper, curved-beam jaw |
+| Products | Self-balancing bikes | Inverted-pendulum simulator with steering (Honda-style negative trail) or gyroscope control; gyro sizing |
+| | EV & Tesla-style design | Range vs speed, 0–100, top speed, single-gear tractive force, battery series/parallel and C-rate; Tesla design choices explained |
+| | Sewing machine | Needle slider-crank, 2:1 rotary hook, take-up, four-motion feed; timing diagram and inertia |
+| Design thinking | Why is it built this way? | I-beams, hollow shafts, fillets, domes, hooks, triangles, springs, involutes, ribs, drive choice, with live comparisons |
+| | Why is a spanner shaped so? | Length from torque, 15° offset from hex geometry, uniform-strength taper, curved-beam jaw |
 | | Failure case studies | Tacoma Narrows, Hyatt Regency, Comet, Liberty ships, Silver Bridge, Millennium Bridge |
 | | Design notebook | Notes with voice dictation |
 

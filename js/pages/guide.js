@@ -47,6 +47,19 @@ MD.register('guide', {
       { t: '⚙️ Cam-operated valve / follower', steps: [
         ['kinematics', 'Cam & follower', 'Lift, rise/return angles, base circle, speed → pressure angle, undercut, jerk; retaining-spring force.'],
         ['spring', 'Spring', 'Fmin = preload, Fmax = preload + spring force from the cam page; operating frequency = cam rpm/60 → surge check.'] ] },
+      { t: '⚡ Electric car or scooter', steps: [
+        ['ev', 'EV designer', 'Pick a preset; set cruise speed and battery kWh. Read range, 0–100 time, cells in series × parallel and cell C-rate.'],
+        ['gearsplus', 'Reduction gears', 'The single-speed reduction is often helical (quiet) or planetary (compact): size it at motor peak torque.'],
+        ['bearings', 'Motor bearings', 'High motor speed: check bearing life at speed.'],
+        ['clutch', 'Brakes', 'Disc-brake temperature for a stop from top speed (regenerative braking reduces this in real EVs).'] ] },
+      { t: '🛵 Self-balancing two-wheeler', steps: [
+        ['balancebike', 'Balance controller', 'Choose steering or gyroscope balancing; tune Kp and Kd; push it and check it recovers at 0 km/h.'],
+        ['gearsplus', 'Steering actuator gearbox', 'Size a worm or planetary reduction for the steering motor torque.'],
+        ['shaft', 'Gyro flywheel shaft', 'If using gyroscopes: flywheel mass and spin speed → shaft and bearing loads.'] ] },
+      { t: '🧵 Sewing machine', steps: [
+        ['sewing', 'Mechanism timing', 'Speed and stitch length → needle acceleration, hook speed, feed speed, timing diagram.'],
+        ['dynamics', 'Balancing', 'Needle-bar inertia force → counterweight on the main shaft (balancing tab).'],
+        ['gearsplus', 'Hook drive', '2:1 bevel or belt drive from the main shaft to the hook shaft.'] ] },
       { t: '🏗 Wall bracket / crane jib', steps: [
         ['structure', 'Jib preset', 'Load the wall-crane preset; read tie tension and jib compression.'],
         ['column', 'Compression member', 'Check the jib as a column (end conditions, eccentricity).'],
@@ -71,15 +84,20 @@ MD.register('guide', {
       ['Spur gears (Lewis, Buckingham, Hertz)', 'yes', 'Gear designer'],
       ['Gear trains (constant-mesh gearbox), roller chains, bicycle drivetrains', 'yes', 'Bike drivetrain & gear train'],
       ['Flat & V-belts, helical compression springs, bolted joints (axial)', 'yes', 'Belt, spring, bolt'],
+      ['Helical, bevel, worm and planetary gears', 'yes', 'Helical, bevel, worm & planetary'],
+      ['Rolling bearings (L10 life) and journal bearings', 'yes', 'Bearings'],
+      ['Keys, splines, flange & flexible couplings', 'yes', 'Keys, splines & couplings'],
+      ['Clutches (plate, cone) and brakes (disc, band)', 'yes', 'Clutches & brakes'],
+      ['Welded (eccentric) and riveted joints', 'yes', 'Welded & riveted joints'],
+      ['Power screws, screw jacks', 'yes', 'Power screws'],
+      ['Pressure vessels (thin/thick, end closures), curved beams', 'yes', 'Pressure vessels & curved beams'],
+      ['Product system design: EV, self-balancing bike, sewing machine', 'yes', 'Products section'],
       ['Impact/shock loading', 'partial', 'via service factors only'],
       ['Bolted joints in shear / eccentric loading', 'partial', 'axial tension only'],
       ['Creep and fracture mechanics', 'partial', 'warnings and case studies; no K_IC or creep-life calculation'],
       ['3D structures and solid parts', 'partial', '2D frames/trusses only; out-of-plane buckling approximated with I_min'],
-      ['Helical, bevel and worm gears; planetary trains', 'no', 'planned'],
-      ['Rolling-contact bearings (L10 life), journal bearings', 'no', 'planned'],
-      ['Keys, splines, couplings, clutches, brakes', 'no', 'planned'],
-      ['Welded and riveted joints, power screws', 'no', 'planned'],
-      ['Pressure vessels / thick cylinders, curved beams, leaf & torsion springs', 'no', 'planned'],
+      ['Gear rating to AGMA 2001 / ISO 6336', 'partial', 'Lewis + Buckingham (conservative) with a Hertz cross-check'],
+      ['Leaf & torsion springs, flywheels as stressed discs, cams with dynamics of follower train', 'no', 'planned'],
       ['Tolerances & fits, cost, manufacturability, seismic loads', 'no', 'outside current scope'],
     ];
     const tb = h('table', { class: 't' }, h('tr', null, h('th', null, 'Design aspect'), h('th', null, 'Status'), h('th', { style: { textAlign: 'left' } }, 'Where')));

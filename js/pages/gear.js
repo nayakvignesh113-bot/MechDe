@@ -25,6 +25,22 @@ function gearCalc(v, m, overrideBHN) {
   const sH = 191 * Math.sqrt(Pt * Kv * v.Cs * 1.3 / (b * dp * I)), Sc = 2.22 * BHN + 200;
   return { m, z2, dp, dg, vel, b, Pt, Cv, Peff, Sb, Sw, nb: Sb / Peff, nw: Sw / Peff, weak, Y1: Y(v.z1), Y2: Y(z2), K, Q, sH, Sc, nH: (Sc / sH) ** 2, T1: v.P * 1000 / w1, BHN };
 }
+const _inv = a => Math.tan(a) - a, _phi = 20 * deg;
+function gearPath(ctx, cx, cy, z, mm, rot, sc) {
+  const r = mm * z / 2, rb = r * Math.cos(_phi), ra = r + mm, rf = Math.max(r - 1.25 * mm, 0.2 * r), psi = Math.PI / (2 * z) + _inv(_phi);
+  ctx.beginPath();
+  for (let k = 0; k < z; k++) {
+    const c = rot + k * 2 * Math.PI / z, rs = linspace(Math.max(rb, rf), ra, 8);
+    const pt = (rr, a) => [cx + rr * sc * Math.cos(a), cy - rr * sc * Math.sin(a)];
+    const a0 = c - Math.PI / z;
+    if (k === 0) ctx.moveTo(...pt(rf, a0));
+    ctx.lineTo(...pt(rf, c - psi)); // root to base (radial)
+    rs.forEach(rr => ctx.lineTo(...pt(rr, c - (psi - _inv(Math.acos(Math.min(1, rb / rr)))))));
+    [...rs].reverse().forEach(rr => ctx.lineTo(...pt(rr, c + (psi - _inv(Math.acos(Math.min(1, rb / rr)))))));
+    ctx.lineTo(...pt(rf, c + psi)); ctx.lineTo(...pt(rf, c + Math.PI / z));
+  }
+  ctx.closePath();
+}
 MD.register('gear', {
   group: 'Machine elements', title: 'Spur gear designer', icon: '⚙️', voice: 'gear spur gear design module',
   render(main) {
@@ -75,26 +91,11 @@ Hertz:      σH = ZE·√(Wt·Kv·Ko·Km / (b·dp·I)),  ZE = 191 √MPa (steel/
       const hb = linspace(100, 650, 60), r2 = hb.map(x => gearCalc(v, pick.m, x));
       plot(c1, { title: `FS vs surface hardness (m = ${pick.m})`, xlabel: 'Surface hardness (BHN)', ylabel: 'Factor of safety', legend: 'tl', hlines: [{ y: v.n, label: 'required' }], series: [{ label: 'Bending (hardness-independent)', x: hb, y: r2.map(r => r.nb) }, { label: 'Wear (∝ BHN²)', x: hb, y: r2.map(r => r.nw) }] });
       const ms = MODULES; plot(c2, { title: 'FS vs module', xlabel: 'Module (mm)', ylabel: 'Factor of safety', logy: true, legend: 'tl', hlines: [{ y: v.n, label: 'required' }], series: [{ label: 'Bending ∝ m²', x: ms, y: rows.map(r => r.nb) }, { label: 'Wear ∝ m²', x: ms, y: rows.map(r => r.nw) }], vlines: [{ x: pick.m }] });
+      effectTable(out, vv => { const r = gearCalc(vv, pick.m); return { 'Bending FS': r.nb, 'Wear FS': r.nw, 'Pitch-line speed': r.vel }; }, v, specs, { key: 'gear', note: `Module held at ${pick.m} mm.` });
       explain(`Use module ${pick.m} with ${v.z1} and ${pick.z2} teeth and a ${fmt(pick.b)} millimetre face. The design is limited by ${gov}. Bending safety factor ${fmt(pick.nb)}, wear safety factor ${fmt(pick.nw)}.`);
     }
     const f = buildForm(L, specs, run, 'gear'); run(f.vals);
     MD.onEnv = () => run(V);
-    const inv = a => Math.tan(a) - a, phi = 20 * deg;
-    function gearPath(ctx, cx, cy, z, mm, rot, sc) {
-      const r = mm * z / 2, rb = r * Math.cos(phi), ra = r + mm, rf = Math.max(r - 1.25 * mm, 0.2 * r), psi = Math.PI / (2 * z) + inv(phi);
-      ctx.beginPath();
-      for (let k = 0; k < z; k++) {
-        const c = rot + k * 2 * Math.PI / z, rs = linspace(Math.max(rb, rf), ra, 8);
-        const pt = (rr, a) => [cx + rr * sc * Math.cos(a), cy - rr * sc * Math.sin(a)];
-        const a0 = c - Math.PI / z;
-        if (k === 0) ctx.moveTo(...pt(rf, a0));
-        ctx.lineTo(...pt(rf, c - psi)); // root to base (radial)
-        rs.forEach(rr => ctx.lineTo(...pt(rr, c - (psi - inv(Math.acos(Math.min(1, rb / rr)))))));
-        [...rs].reverse().forEach(rr => ctx.lineTo(...pt(rr, c + (psi - inv(Math.acos(Math.min(1, rb / rr)))))));
-        ctx.lineTo(...pt(rf, c + psi)); ctx.lineTo(...pt(rf, c + Math.PI / z));
-      }
-      ctx.closePath();
-    }
     let th = 0;
     anim(() => {
       if (!G) return; const { ctx, w, h: H } = setupCanvas(cv); ctx.clearRect(0, 0, w, H);
@@ -107,7 +108,7 @@ Hertz:      σH = ZE·√(Wt·Kv·Ko·Km / (b·dp·I)),  ZE = 191 √MPa (steel/
       ctx.setLineDash([4, 4]); ctx.strokeStyle = '#64748b'; ctx.lineWidth = 1;
       [[cx1, r1], [cx2, r2]].forEach(([x, r]) => { ctx.beginPath(); ctx.arc(x, cy, r * sc, 0, 7); ctx.stroke(); });
       // line of action
-      const px = cx1 + r1 * sc, L = 1.6 * mm * sc / Math.sin(phi) ; ctx.strokeStyle = '#2f7d32'; ctx.beginPath(); ctx.moveTo(px - L * Math.sin(phi), cy - L * Math.cos(phi)); ctx.lineTo(px + L * Math.sin(phi), cy + L * Math.cos(phi)); ctx.stroke(); ctx.setLineDash([]);
+      const px = cx1 + r1 * sc, L = 1.6 * mm * sc / Math.sin(_phi) ; ctx.strokeStyle = '#2f7d32'; ctx.beginPath(); ctx.moveTo(px - L * Math.sin(_phi), cy - L * Math.cos(_phi)); ctx.lineTo(px + L * Math.sin(_phi), cy + L * Math.cos(_phi)); ctx.stroke(); ctx.setLineDash([]);
       [cx1, cx2].forEach(x => { ctx.fillStyle = '#1b2430'; ctx.beginPath(); ctx.arc(x, cy, 4, 0, 7); ctx.fill(); });
       tag(ctx, `Pinion (driver, z = ${z1})`, cx1, cy + (r1 + 1.5 * mm) * sc + 12, '#c2410c', 'center');
       tag(ctx, `Gear (driven, z = ${z2})`, cx2, cy + (r2 + 1.5 * mm) * sc + 12 > H - 8 ? H - 10 : cy + (r2 + 1.5 * mm) * sc + 12, '#0f5e8c', 'center');

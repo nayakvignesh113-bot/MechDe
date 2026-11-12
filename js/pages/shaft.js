@@ -174,6 +174,7 @@ DE-Goodman: d = [16n/π · ( √(4(Kf·Ma)² + 3(Kfs·Ta)²)/Se + √(4(Kf·Mm)�
       plot(c4, { title: 'Same power, different speed: who governs?', xlabel: 'Speed (rpm)', ylabel: 'required d (mm)', legend: 'tr', vlines: [{ x: v.rpm }], series: [
         { label: 'Fatigue (Goodman)', x: rpms, y: sw.map(q => q['Fatigue: Goodman']) }, { label: 'Deflection', x: rpms, y: sw.map(q => q['Deflection at elements']) },
         { label: 'Bearing slope', x: rpms, y: sw.map(q => q['Slope at bearings']) }, { label: 'Critical speed', x: rpms, y: sw.map(q => q['Critical speed']), width: 2.5 }] });
+      effectTable(out, vv => { const m2 = matAt(vv.mat), s2 = shaftModel(vv), f2 = shaftFatigue(s2, dstd, vv, m2), d2 = shaftDeflect(s2, dstd, m2.E); return { 'Fatigue FS': f2.n.Goodman, 'Deflection at gear': Math.max(...d2.atEl.map(a => a.y), 0), 'Critical speed': shaftCritical(s2, dstd, m2.E, m2.rho) }; }, v, specs, { key: 'shaft', note: `Shaft held at Ø${dstd} mm. Notice that span L changes deflection far more than anything else (∝ L³).` });
       explain(`Select a ${dstd} millimetre shaft. It is governed by ${govK}. The Goodman fatigue safety factor is ${fmt(fa.n.Goodman)}, and the first critical speed is ${fmt(wc * 60 / 2 / Math.PI)} rpm against ${v.rpm} operating.`);
     }
     const f = buildForm(L, specs, run, 'shaft'); run(f.vals);

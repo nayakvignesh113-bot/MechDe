@@ -159,6 +159,8 @@ const MD = {
     $('#menuBtn').onclick = () => document.body.classList.toggle('nav-open');
     nav.addEventListener('click', e => { if (e.target.tagName === 'A') document.body.classList.remove('nav-open'); });
     $('#envBtn').onclick = () => location.hash = 'environment';
+    $('#modeBtn').onclick = () => { setExpert(!MD.expert); MD.route(); toast(MD.expert ? 'Expert mode: every input shown' : 'Simple mode: only the key inputs shown'); };
+    setExpert(store('expert') === true);
     $('#modal .modal-x').onclick = () => $('#modal').classList.add('hidden');
     $('#modal').onclick = e => { if (e.target.id === 'modal') $('#modal').classList.add('hidden'); };
     window.addEventListener('hashchange', () => this.route());
@@ -175,9 +177,51 @@ const MD = {
     const p = this.pages[id];
     document.title = (id === 'home' ? '' : p.title + ' — ') + 'MechDe Design Studio';
     p.render(main);
+    try { this.decorate(main, p); } catch (e) { console.error(e); }
   },
   envChanged() { store('env', ENV); updateEnvSummary(); if (this.onEnv) this.onEnv(); },
+  decorate(main, p) {
+    const F = window.FRIENDLY || { kid: {}, eq: {} }, kid = p.kid || F.kid[MD.current], eqs = p.eq || F.eq[MD.current];
+    if (kid) {
+      const k = kid, box = h('div', { class: 'kidbox' }, h('div', { class: 'kid-what', html: '🧭 <b>What this page does:</b> ' + k.what }));
+      if (k.steps) box.append(h('ol', { class: 'kid-steps' }, k.steps.map(t => h('li', { html: t }))));
+      if (k.try) box.append(h('div', { class: 'kid-try', html: '🧪 <b>Try this:</b> ' + k.try }));
+      box.append(h('div', { class: 'toolbar', style: { marginTop: '6px' } }, h('button', { class: 'btn ghost sm', onclick: () => Voice.speak(MD.explain || k.what.replace(/<[^>]+>/g, '')) }, '🔊 Read the answer aloud'), h('button', { class: 'btn ghost sm', onclick: () => { const e = $('.eqpanel'); if (e) { e.open = true; e.scrollIntoView({ behavior: 'smooth' }); } } }, '📘 Show the equations')));
+      const lead = $('.lead', main); lead ? lead.after(box) : main.prepend(box);
+    }
+    if (eqs && eqs.length) main.append(eqPanel(eqs));
+  },
 };
+function setExpert(on) { MD.expert = !!on; store('expert', MD.expert); document.body.classList.toggle('simple', !MD.expert); const b = $('#modeBtn'); if (b) b.textContent = MD.expert ? '🎓 Expert' : '🧒 Simple'; }
+// Equations panel: [{t, f, m, s: [[sym, meaning]], fx: [[change, effect]]}]
+function eqPanel(list) {
+  const d = h('details', { class: 'eqpanel' }, h('summary', null, '📘 Equations, what they mean, and how each parameter changes the answer'));
+  list.forEach(e => {
+    const c = h('div', { class: 'eqcard' }, h('div', { class: 'eqt' }, e.t), h('div', { class: 'eq' }, e.f));
+    if (e.m) c.append(h('p', { class: 'small', html: e.m }));
+    if (e.s) c.append(h('div', { class: 'syms' }, e.s.map(([a, b]) => h('span', null, h('b', { class: 'mono' }, a), ' ' + b))));
+    if (e.fx) c.append(h('table', { class: 't fx' }, h('tr', null, h('th', null, 'If you…'), h('th', { style: { textAlign: 'left' } }, 'then… and why')), e.fx.map(([a, b]) => h('tr', null, h('td', { style: { fontFamily: 'var(--sans)', whiteSpace: 'nowrap' } }, a), h('td', { style: { fontFamily: 'var(--sans)', textAlign: 'left' }, html: b })))));
+    d.append(c);
+  });
+  return d;
+}
+// Effect-of-parameters: perturb each numeric input +10 % and report % change of outputs. fn(vals) → {label: number}
+function effectTable(el, fn, vals, specs, opts = {}) {
+  let base; try { base = fn(Object.assign({}, vals)); } catch (e) { return; }
+  const outs = Object.keys(base).filter(k => isFinite(base[k]) && base[k] !== 0);
+  const bl = opts.key && !MD.expert && window.FRIENDLY && FRIENDLY.basic[opts.key];
+  const ids = specs.filter(s => s.id && !s.type && isFinite(vals[s.id]) && vals[s.id] !== 0 && !(opts.skip || []).includes(s.id) && (!bl || bl.includes(s.id)));
+  const rows = [];
+  ids.forEach(s => { let r; try { r = fn(Object.assign({}, vals, { [s.id]: vals[s.id] * 1.1 })); } catch (e) { return; }
+    const ch = outs.map(k => (r[k] / base[k] - 1) * 100); if (ch.every(c => !isFinite(c) || Math.abs(c) < 0.05)) return; rows.push({ s, ch }); });
+  if (!rows.length) return;
+  rows.sort((a, b) => Math.max(...b.ch.map(Math.abs).filter(isFinite)) - Math.max(...a.ch.map(Math.abs).filter(isFinite)));
+  const cell = c => { if (!isFinite(c)) return h('td', null, '—'); const up = c > 0, big = Math.abs(c) >= 5; return h('td', { style: { color: Math.abs(c) < 0.5 ? 'var(--muted)' : up ? 'var(--good)' : 'var(--bad)', fontWeight: big ? 700 : 400 } }, (up ? '▲ +' : '▼ ') + fmt(c, 2) + ' %'); };
+  const tb = h('table', { class: 't' }, h('tr', null, h('th', null, 'Increase this by 10 %'), outs.map(k => h('th', null, k))), rows.map(r => h('tr', null, h('td', { style: { fontFamily: 'var(--sans)' } }, r.s.label.replace(/<[^>]+>/g, '')), r.ch.map(cell))));
+  const top = rows[0], k0 = top.ch.map(Math.abs).indexOf(Math.max(...top.ch.map(Math.abs).filter(isFinite)));
+  el.append(h('div', { class: 'card effect', style: { marginTop: '12px' } }, h('div', { class: 'panel-title' }, opts.title || '🔬 Effect of each parameter (live: +10 % change, everything else fixed)'), h('div', { class: 'tablewrap' }, tb),
+    h('p', { class: 'small', html: `Biggest lever right now: <b>${top.s.label.replace(/<[^>]+>/g, '')}</b>. +10 % changes <i>${outs[k0]}</i> by ${fmt(top.ch[k0], 2)} %. ${opts.note || 'Green = the output rises, red = it falls. Big numbers mean the result is sensitive to that input, so measure it carefully or design margin around it.'}` })));
+}
 function updateEnvSummary() {
   const s = $('#envSummary'); if (s) s.textContent = `${ENV.T} °C · ${ENV.medium.split(' ')[0].toLowerCase()} · R ${ENV.rel * 100}%`;
 }
@@ -191,7 +235,7 @@ function pageHead(main, crumb, title, lead) {
 /* Form builder. specs: [{id,label,unit,value,min,max,step,type:'num'|'select'|'check',options,aliases,section,slider}] */
 function buildForm(container, specs, onChange, key, init) {
   const saved = key ? (store('form:' + key) || {}) : {};
-  const vals = {}, inputs = {};
+  const vals = {}, inputs = {}; let advCount = 0;
   if (key || init === 'reset') {
     container.append(h('div', { class: 'toolbar', style: { justifyContent: 'flex-end', margin: '0 0 4px' } }, h('button', { class: 'btn ghost sm', title: 'Restore the default inputs for this module', onclick: () => {
       for (const k in saved) delete saved[k]; if (key) store('form:' + key, {});
@@ -205,8 +249,11 @@ function buildForm(container, specs, onChange, key, init) {
     let v = saved[s.id] !== undefined ? saved[s.id] : s.value;
     if (s.type === 'select' && !s.options.map(String).includes(String(v))) v = s.value;
     vals[s.id] = (s.type === 'select' || s.type === 'text') ? v : (s.type === 'check' ? !!v : +v);
+    const tipText = s.tip || (window.FRIENDLY && ((FRIENDLY.tips[key] || {})[s.id] || FRIENDLY.tips._[s.id]));
     const lab = h('label', { for: 'f_' + s.id, html: s.label + (s.unit ? ` <span class="u">[${s.unit}]</span>` : '') });
-    if (s.tip) lab.title = s.tip;
+    if (tipText) { const ib = h('span', { class: 'info', title: tipText, role: 'button', tabindex: '0' }, 'ⓘ'); ib.onclick = (e) => { e.preventDefault(); e.stopPropagation(); const nx = ib.closest('.field').nextElementSibling; if (nx && nx.classList.contains('help')) nx.remove(); else ib.closest('.field').after(h('div', { class: 'help' }, tipText)); }; lab.append(' ', ib); }
+    const basicList = window.FRIENDLY && FRIENDLY.basic[key];
+    const isAdv = s.adv || (basicList && !basicList.includes(s.id));
     let inp, row;
     if (s.type === 'select') {
       inp = h('select', { id: 'f_' + s.id }, s.options.map(o => h('option', { value: o }, (s.labels && s.labels[o]) || String(o))));
@@ -234,6 +281,7 @@ function buildForm(container, specs, onChange, key, init) {
       onChange && onChange(vals, s.id);
     };
     inp.addEventListener(s.type === 'select' || s.type === 'check' ? 'change' : 'input', fire);
+    if (isAdv) { row.classList.add('adv'); advCount++; }
     inputs[s.id] = inp; container.append(row);
     MD.fields[s.id] = { spec: s, set: (nv) => {
       if (s.type === 'select') { const o = s.options.find(o => String(o).toLowerCase().includes(String(nv).toLowerCase())); if (!o) return false; inp.value = o; }
@@ -242,6 +290,11 @@ function buildForm(container, specs, onChange, key, init) {
       else { inp.value = nv; if (inp._slider) inp._slider.value = nv; }
       row.classList.add('flash'); setTimeout(() => row.classList.remove('flash'), 900); fire(); return true;
     } };
+  }
+  if (advCount) {
+    // hide section headers whose fields are all advanced
+    $$('.sec-h', container).forEach(hd => { let n = hd.nextElementSibling, any = false, all = true; while (n && !n.classList.contains('sec-h')) { if (n.classList.contains('field')) { any = true; if (!n.classList.contains('adv')) all = false; } n = n.nextElementSibling; } if (any && all) hd.classList.add('adv'); });
+    container.append(h('div', { class: 'more-inputs' }, h('button', { class: 'btn ghost sm', onclick: () => setExpert(true) }, `＋ ${advCount} more inputs (Expert mode)`), h('span', { class: 'small' }, ' Defaults are used for hidden inputs.')));
   }
   if (init === true) onChange(vals);
   return { vals, inputs, set: (id, v) => MD.fields[id] && MD.fields[id].set(v) };

@@ -53,6 +53,7 @@ MD.register('column', {
       plot(c1, { title: `Critical stress vs slenderness: ${v.mat} at ${ENV.T} °C`, xlabel: 'Slenderness ratio λ = KL/k', ylabel: 'σ_cr (MPa)', ymin: 0, ymax: m.Sy * 1.25, legend: 'tr', vlines: [{ x: r.lam1, label: 'λ₁', color: '#94a3b8' }],
         series: [{ label: 'Euler π²E/λ²', x: ls, y: ls.map(l => Math.PI ** 2 * m.E / (l * l)), dash: [5, 3] }, { label: 'Johnson + Euler (design)', x: ls, y: ls.map(sig), width: 2.6 }, { label: 'Rankine–Gordon', x: ls, y: ls.map(l => m.Sy / (1 + m.Sy / (Math.PI ** 2 * m.E) * l * l)) }, { label: 'Yield Sy', x: [0, 250], y: [m.Sy, m.Sy], color: '#94a3b8', dash: [2, 3] }],
         points: [{ x: Math.min(r.lam, 250), y: P / r.S.A, label: 'applied σ', color: '#c2410c' }, { x: Math.min(r.lam, 250), y: sig(r.lam), label: 'critical', color: '#1b2430', r: 4 }] });
+      R.querySelectorAll('.effect').forEach(e => e.remove()); effectTable(R, vv => { const mm = matAt(vv.mat), q = colCalc(vv, mm); return { 'Buckling FS': q.Pcr / (vv.P * 1000), 'Slenderness λ': q.lam }; }, v, specs, { key: 'column', note: 'Length and section size dominate. Material strength barely matters once the column is slender.' });
       explain(`Slenderness ratio ${fmt(r.lam)} against transition ${fmt(r.lam1)}, so ${r.regime} governs. Critical load ${fmt(r.Pcr / 1000)} kilonewtons, buckling safety factor ${fmt(nB)}.`);
     }
     const f = buildForm(L, specs, run, 'column'); run(f.vals);

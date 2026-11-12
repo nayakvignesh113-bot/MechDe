@@ -67,6 +67,7 @@ MD.register('spring', {
       plot(c1, { title: 'Each check vs wire diameter (C fixed): the pass window', xlabel: 'Wire diameter d (mm)', ylabel: 'Ratio (≥ 1 passes)', logy: true, legend: 'tr', hlines: [{ y: 1, label: 'pass', color: '#2f7d32' }], vlines: [{ x: r.d }],
         series: [{ label: 'Fatigue FS / required', x: dd.map(q => q.d), y: dd.map(q => q.nf / v.nf) }, { label: 'Solid-stress FS / 1.2', x: dd.map(q => q.d), y: dd.map(q => q.ns / 1.2) },
           { label: 'Buckling limit / L0', x: dd.map(q => q.d), y: dd.map(q => q.Lcr / q.L0) }, { label: 'Surge f / (15·f_op)', x: dd.map(q => q.d), y: dd.map(q => v.fop > 0 ? q.fs / (15 * v.fop) : NaN) }] });
+      R.querySelectorAll('.effect').forEach(e => e.remove()); effectTable(R, vv => { const q = calc(vv, r.d); return { 'Fatigue FS': q.nf, 'Max stress': q.tmax, 'Rate k': q.k, 'Surge f': q.fs }; }, v, specs, { key: 'spring', note: `Wire held at Ø${r.d} mm.` });
       explain(pick ? `Use ${r.d} millimetre wire wound on a ${fmt(r.D)} millimetre mean diameter with ${fmt(r.Nt, 3)} total coils. Fatigue safety factor ${fmt(r.nf)}, surge frequency ${fmt(r.fs)} hertz.` : 'No standard wire meets every requirement at this spring index.');
     }
     const f = buildForm(L, specs, run, 'spring'); run(f.vals);

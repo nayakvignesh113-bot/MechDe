@@ -60,6 +60,7 @@ nf = Se(Sut − σi) / [Sut·σa + Se(σm − σi)],  σa = CP/2At = ${fmt(r.sa)
       plot(c1, { title: 'Preload sweep: why we tighten hard', xlabel: 'Preload (% proof)', ylabel: 'Factor of safety', ymin: 0, ymax: 6, legend: 'tr', hlines: [{ y: 1, label: '1.0' }], vlines: [{ x: v.pre }], series: [{ label: 'Separation', x: pr, y: rs.map(q => q.n0) }, { label: 'Fatigue', x: pr, y: rs.map(q => q.nf) }, { label: 'Yield load factor', x: pr, y: rs.map(q => q.nL) }] });
       const gl = linspace(10, 200, 40), rg = gl.map(l => boltCalc(v, { l }));
       plot(c2, { title: 'Longer grip → softer bolt → smaller C', xlabel: 'Grip length (mm)', ylabel: 'C and fatigue FS', legend: 'tl', vlines: [{ x: v.l }], series: [{ label: 'C', x: gl, y: rg.map(q => q.C) }, { label: 'Fatigue FS', x: gl, y: rg.map(q => q.nf) }] });
+      effectTable(out, vv => { const q = boltCalc(vv); return { 'Fatigue FS': q.nf, 'Separation FS': q.n0, 'Yield factor': q.nL }; }, v, specs, { key: 'bolt' });
       explain(`Each bolt carries ${fmt(r.P / 1000)} kilonewtons. The joint constant is ${fmt(r.C, 2)}, so the bolt feels only ${fmt(100 * r.C)} percent of it. The weakest check is ${worst.k} at ${fmt(worst.v)}. Tighten to ${fmt(r.T)} newton metres.`);
     }
     const f = buildForm(L, specs, run, 'bolt'); run(f.vals);

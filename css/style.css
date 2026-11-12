@@ -128,3 +128,28 @@ details summary{cursor:pointer;font-weight:600;margin:6px 0}
   h1{font-size:22px}
 }
 .grid2 > *, .grid3 > *{min-width:0}
+
+.info{display:inline-block;color:var(--accent2);cursor:pointer;font-size:13px;padding:0 3px;border-radius:50%}
+.info:hover{background:#e6f0f7}
+.help{font-size:12.5px;color:var(--ink2);background:#eef5fa;border-left:3px solid var(--accent2);padding:6px 9px;margin:-2px 0 6px;border-radius:0 6px 6px 0}
+body.simple .field.adv, body.simple .sec-h.adv{display:none}
+body.simple .field.adv + .help{display:none}
+.more-inputs{margin-top:10px;display:none}
+body.simple .more-inputs{display:block}
+.kidbox{background:#fff;border:2px solid #f3c9a8;border-radius:12px;padding:12px 16px;margin:4px 0 16px;max-width:1000px}
+.kid-what{font-size:15px}
+.kid-steps{margin:8px 0 4px;padding-left:22px;font-size:14px}
+.kid-steps li{margin:3px 0}
+.kid-try{background:#fff7ef;border-radius:8px;padding:7px 10px;font-size:14px;margin-top:6px}
+.eqpanel{margin-top:22px;background:#fff;border:1px solid var(--line);border-radius:var(--r);padding:10px 16px}
+.eqpanel > summary{font-size:16px;color:var(--accent2)}
+.eqcard{border-top:1px dashed var(--line);padding:10px 0}
+.eqt{font-weight:700;margin-bottom:2px}
+.syms{display:flex;flex-wrap:wrap;gap:4px 16px;font-size:12.5px;color:var(--ink2);margin:4px 0}
+table.fx td{vertical-align:top}
+#modeBtn{background:#3a2a1c;border-color:#7c4a24}
+@media (max-width:900px){ .tb-right{gap:4px} #speakBtn{display:none} }
+.tile.big{border:2px solid #f3c9a8;background:#fffaf5}
+.tile.big b{font-size:16px}
+.card.flow{padding:10px}
+.card.flow svg a:hover rect{filter:brightness(0.95)}
