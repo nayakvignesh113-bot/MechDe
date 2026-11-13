@@ -8,6 +8,8 @@ Design is the reverse of analysis. MechDe connects the four subjects behind ever
 
 ## Built for beginners
 
+- An animated **presenter** (Dr. Vignesh, or Asha / Arjun) walks through each page with gestures, lip-synced speech and highlights.
+
 - **Simple / Expert** switch: beginners see only the key inputs; every input has an ⓘ plain-language explanation.
 - Every page opens with **What this page does** and a **Try this** experiment, and has a **📘 equations panel** (meaning of every symbol and what happens when each parameter changes) plus a live **🔬 effect-of-parameters** table.
 - The home page has a clickable **design flowchart**: need → requirements → concepts → kinematics → loads → stresses → failure modes → material → size & shape (loop) → detail → test (loop) → production & feedback (loop).
@@ -25,13 +27,18 @@ The **How to design with MechDe** page explains how to read any module, gives st
 | | Dynamics lab | Engine turning-moment diagram & flywheel sizing (1–6 cylinders); rotating-mass balancing; vibration isolation / transmissibility |
 | | Design Chain | Slider-crank engine: kinematics → gas + inertia forces → Rankine buckling & whipping → I-section connecting rod, iterated until rod mass converges |
 | Build & test | Structure builder | Draw trusses/frames/bridges; 2D FEM (frame or pin-jointed); self-weight, deck, point, thermal, wind loads; utilisation colouring, deformed shape, BMD; buckling checks; auto-sizing; modal analysis with animated mode shapes; FRF / resonance vs pedestrian bands; moving vehicle with envelope & influence line |
+| | 3D space trusses | Lattice tower, crane mast + jib, double-layer space-frame roof, tripod: 3D direct-stiffness solve, Euler buckling and yield per member, rotatable view, deflected shape, first three modes (inverse iteration) with animation |
 | Machine elements | Shaft | DE-Goodman/Gerber/ASME/Soderberg, yield, deflection, bearing & gear slope, Rayleigh critical speed: required Ø per criterion, governing mode, iteration table, speed sweep |
 | | Spur gear | Lewis + Barth/velocity factor, Buckingham wear, Hertz cross-check; module sweep; involute meshing animation |
 | | Belt drive | Flat & V-belt, centrifugal tension, optimum speed, number of belts, shaft load |
 | | Helical spring | Bergsträsser factor, Zimmerli fatigue, solid-height stress, buckling, surge; wire-size iteration |
+| | Leaf, torsion & torsion-bar springs | Multi-leaf (full + graduated) stress, deflection, ride frequency; helical torsion spring with Wahl-type curvature factor; torsion bar |
 | | Bolted joint | Joint stiffness, preload, separation, Goodman fatigue, thermal preload change, joint diagram |
 | | Columns | Euler / Johnson / Rankine–Gordon / secant; regime map |
 | | Helical, bevel, worm & planetary | Virtual teeth, axial thrust, cone geometry, worm efficiency & self-locking, heat balance, Willis equation, planetary assembly checks |
+| | AGMA gear rating | Metric AGMA 2001 bending and pitting with Kv, KH, Ks, life factors; compared with Lewis |
+| | Cam & valve-train dynamics | Follower train as spring-mass system: valve float / jump, spring surge, redline speed |
+| | Fracture & creep life | K_IC, critical crack size, Paris-law crack growth and inspection interval, leak-before-break; Larson–Miller creep rupture life |
 | | Bearings | Ball/roller L10 life with reliability factor and catalogue selection; journal bearing (Sommerfeld, Ocvirk film thickness, Petroff friction, Trumpler limit) |
 | | Keys, splines & couplings | Key shear/crushing length, spline engagement, rigid flange vs flexible bush coupling |
 | | Clutches & brakes | Plate (uniform wear/pressure), cone (jamming), vehicle disc brake energy & temperature, band brake |

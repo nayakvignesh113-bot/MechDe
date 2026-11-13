@@ -16,6 +16,10 @@ const FRIENDLY = {
     plate: ['P', 'rpm', 'ns', 'mu'], cone: ['P', 'rpm', 'alpha', 'mu'], disc: ['m', 'v0', 'dec', 'md'], band: ['T', 'Dd', 'wrap', 'mu', 'type'],
     weld: ['P', 'e', 'L', 'b'], rivet: ['t', 'd', 'p', 'n'], screw: ['W', 'type', 'd', 'p', 'starts', 'arm'], vessel: ['p', 'D', 'mat'], hook: ['P', 'sec', 'ri', 'h'],
     ev: ['m', 'Cd', 'Pm', 'vc', 'kWh', 'cell'],
+    leaf: ['W', 'span', 'nf', 'ng', 'b', 't'], torsionspring: ['M', 'd', 'D', 'Nb'], tbar: ['F', 'arm', 'd', 'L'],
+    camdyn: ['rpm', 'law', 'h', 'beta', 'ks', 'F0'], agma: ['P', 'rpm', 'i', 'z1', 'm', 'F', 'mat'],
+    fracture: ['mat', 's', 'ds', 'a'], creep: ['mat', 'T', 's', 'life'],
+    space3d: ['preset', 'H', 'B', 'n', 'J', 'D', 't', 'P', 'W'],
   },
   tips: {
     _: {

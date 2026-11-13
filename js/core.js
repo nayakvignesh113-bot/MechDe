@@ -159,6 +159,7 @@ const MD = {
     $('#menuBtn').onclick = () => document.body.classList.toggle('nav-open');
     nav.addEventListener('click', e => { if (e.target.tagName === 'A') document.body.classList.remove('nav-open'); });
     $('#envBtn').onclick = () => location.hash = 'environment';
+    $('#presBtn').onclick = () => Presenter.toggle();
     $('#modeBtn').onclick = () => { setExpert(!MD.expert); MD.route(); toast(MD.expert ? 'Expert mode: every input shown' : 'Simple mode: only the key inputs shown'); };
     setExpert(store('expert') === true);
     $('#modal .modal-x').onclick = () => $('#modal').classList.add('hidden');
@@ -178,6 +179,7 @@ const MD = {
     document.title = (id === 'home' ? '' : p.title + ' — ') + 'MechDe Design Studio';
     p.render(main);
     try { this.decorate(main, p); } catch (e) { console.error(e); }
+    try { Presenter.onPage(); } catch (e) { console.error(e); }
   },
   envChanged() { store('env', ENV); updateEnvSummary(); if (this.onEnv) this.onEnv(); },
   decorate(main, p) {
@@ -213,7 +215,7 @@ function effectTable(el, fn, vals, specs, opts = {}) {
   const ids = specs.filter(s => s.id && !s.type && isFinite(vals[s.id]) && vals[s.id] !== 0 && !(opts.skip || []).includes(s.id) && (!bl || bl.includes(s.id)));
   const rows = [];
   ids.forEach(s => { let r; try { r = fn(Object.assign({}, vals, { [s.id]: vals[s.id] * 1.1 })); } catch (e) { return; }
-    const ch = outs.map(k => (r[k] / base[k] - 1) * 100); if (ch.every(c => !isFinite(c) || Math.abs(c) < 0.05)) return; rows.push({ s, ch }); });
+    const ch = outs.map(k => { const c = (r[k] / base[k] - 1) * 100; return Math.abs(c) < 0.005 ? 0 : c; }); if (ch.every(c => !isFinite(c) || Math.abs(c) < 0.05)) return; rows.push({ s, ch }); });
   if (!rows.length) return;
   rows.sort((a, b) => Math.max(...b.ch.map(Math.abs).filter(isFinite)) - Math.max(...a.ch.map(Math.abs).filter(isFinite)));
   const cell = c => { if (!isFinite(c)) return h('td', null, '—'); const up = c > 0, big = Math.abs(c) >= 5; return h('td', { style: { color: Math.abs(c) < 0.5 ? 'var(--muted)' : up ? 'var(--good)' : 'var(--bad)', fontWeight: big ? 700 : 400 } }, (up ? '▲ +' : '▼ ') + fmt(c, 2) + ' %'); };
@@ -362,4 +364,4 @@ function tag(ctx, text, x, y, color = '#1b2430', align = 'left', size = 12, bold
 function canvasLegend(items) { // [[color, text], ...] → HTML legend row
   return h('div', { class: 'legend' }, items.map(([c, t]) => h('span', null, h('i', { style: { background: c, height: '8px', width: '16px' } }), t)));
 }
-function explain(text) { MD.explain = text; MD.lastExplain = { page: MD.current, text }; }
+function explain(text) { MD.explain = text; MD.lastExplain = { page: MD.current, text }; clearTimeout(explain._t); explain._t = setTimeout(() => { try { Presenter.onResult(); } catch (e) { } }, 60); }

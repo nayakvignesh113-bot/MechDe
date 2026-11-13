@@ -109,12 +109,14 @@ MD.register('home', {
     const tiles = h('div', { class: 'tiles' });
     [['chain', '🔁', 'Design Chain (engine)', 'Kinematics → dynamics → SOM → design, iterated live.'],
       ['structure', '🌉', 'Structure builder', 'Bridges, trusses, frames: static, thermal, wind, vibration, moving loads.'],
+      ['space3d', '🗼', '3D space trusses', 'Towers, crane masts, space-frame roofs, tripods: buckling and vibration in 3D.'],
       ['som', '📐', 'SOM → Design bridge', 'Mohr\'s circle, failure theories, real-world factors.'],
-      ['shaft', '🛞', 'Shaft', 'Fatigue, deflection, critical speed.'], ['gear', '⚙️', 'Spur gears', 'Bending vs wear, module choice.'], ['gearsplus', '⚙️', 'Helical, bevel, worm, planetary', 'Thrust, efficiency, self-locking, epicyclic ratios.'],
+      ['shaft', '🛞', 'Shaft', 'Fatigue, deflection, critical speed.'], ['gear', '⚙️', 'Spur gears', 'Bending vs wear, module choice.'], ['gearsplus', '⚙️', 'Helical, bevel, worm, planetary', 'Thrust, efficiency, self-locking, epicyclic ratios.'], ['agma', '🏅', 'AGMA gear rating', 'Industry-standard bending and pitting rating vs Lewis.'],
       ['bearings', '🔘', 'Bearings', 'Ball/roller life (L10) and oil-film journal bearings.'], ['keys', '🔑', 'Keys, splines, couplings', 'Connecting hubs to shafts and shafts to shafts.'],
       ['clutch', '🛑', 'Clutches & brakes', 'Friction torque, heat, wear.'], ['joints', '🔥', 'Welded & riveted joints', 'Eccentric welds, riveted joint efficiency.'], ['screws', '🔩', 'Power screws', 'Screw jacks, efficiency, self-locking.'],
       ['vessels', '🛢', 'Pressure vessels & curved beams', 'Why tanks are domed and hooks are fat inside.'],
-      ['belt', '➰', 'Belt drive', 'Centrifugal tension, optimum speed.'], ['spring', '🌀', 'Springs', 'Fatigue, buckling, surge.'], ['bolt', '🔩', 'Bolted joints', 'Preload, separation, fatigue.'], ['column', '🏛', 'Columns', 'Euler vs Johnson.'],
+      ['fracture', '🧩', 'Fracture & creep life', 'Critical crack size, crack growth, hot-part life.'], ['camdyn', '🎢', 'Cam & valve-train dynamics', 'Valve float, jump, spring surge at high rpm.'],
+      ['belt', '➰', 'Belt drive', 'Centrifugal tension, optimum speed.'], ['spring', '🌀', 'Springs', 'Fatigue, buckling, surge.'], ['springsplus', '🍃', 'Leaf, torsion & torsion-bar springs', 'Truck suspensions, clothes pegs, car torsion bars.'], ['bolt', '🔩', 'Bolted joints', 'Preload, separation, fatigue.'], ['column', '🏛', 'Columns', 'Euler vs Johnson.'],
       ['drivetrain', '🚲', 'Bike drivetrain & gear train', 'Bicycle gears, motorcycle gearbox.'], ['kinematics', '🔗', 'Kinematics lab', 'Linkages, cams.'], ['dynamics', '〰', 'Dynamics lab', 'Flywheel, balancing, isolation.'],
       ['why', '🤔', 'Why is it built this way?', 'Shapes explained with live comparisons.'], ['balancebike', '🛵', 'Self-balancing bikes', 'Inverted pendulum, steering, gyroscopes.'], ['ev', '⚡', 'EV & Tesla-style design', 'Range, battery, motor, gear ratio.'], ['sewing', '🧵', 'Sewing machine', 'Needle, hook, take-up, feed timing.'],
       ['spanner', '🔧', 'Why a spanner is shaped so', 'Length, 15° head, taper.'], ['cases', '⚠️', 'Failure case studies', 'Tacoma, Hyatt, Comet, Liberty, Silver, Millennium.'], ['environment', '🌡', 'Operating environment', 'Temperature, corrosion, reliability.'], ['notebook', '📝', 'Design notebook', 'Voice dictation.']]

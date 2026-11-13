@@ -1,0 +1,152 @@
+'use strict';
+/* Talking presenter: original cartoon engineer with lip movement, purposeful gestures and highlighting.
+   Speaks only when the student presses ▶ (browsers also require a tap before audio). */
+const Presenter = (() => {
+  const CHAR = {
+    'Dr. Vignesh': { skin: '#9b6440', hair: '#17110d', shirt: '#a7a1e3', trousers: '#c9bfa3', vest: null, hat: false, style: 'prof', voice: /male|ravi|hemant|rishi|prabhat|david|daniel|google uk english male/i, pitch: 0.9, long: false },
+    Asha: { skin: '#b9784f', hair: '#2b1a12', shirt: '#2f6f9f', vest: '#f08c2e', hat: '#ffd23f', voice: /female|veena|heera|kalpana|lekha|zira|samantha|swara|neerja|google.*hindi|en-in/i, pitch: 1.12, long: true },
+    Arjun: { skin: '#a8693f', hair: '#1d130c', shirt: '#3c6b3a', vest: '#f08c2e', hat: '#ffd23f', voice: /male|ravi|hemant|rishi|prabhat|david|daniel|google uk english male/i, pitch: 0.92, long: false },
+  };
+  let cfg = Object.assign({ on: true, who: 'Dr. Vignesh', rate: 1, min: window.innerWidth < 700 }, store('presenter') || {});
+  const save = () => store('presenter', cfg);
+  let root, svg, bubble, parts = {}, gesture = 'idle', gT = 0, speaking = false, lastBoundary = 0, viseme = 'closed', queue = [], qi = 0, script = [], blinkT = 2, hl = null;
+  const NS = 'http://www.w3.org/2000/svg', E = (t, a) => { const e = document.createElementNS(NS, t); for (const k in a) e.setAttribute(k, a[k]); return e; };
+  // pose table: [A shoulder, A forearm, B shoulder, B forearm] in degrees from straight down; positive = outward
+  const POSE = { idle: [8, 4, 8, 4], wave: [8, 4, 150, 160], point: [92, 96, 10, 6], explain: [42, 95, 42, 95], think: [8, 4, -12, -150], thumbs: [8, 4, 62, 172], warn: [55, 150, 55, 150], greet: [8, 4, 120, 165] };
+  let cur = POSE.idle.slice();
+  function build() {
+    root = h('div', { id: 'presenter', class: cfg.min ? 'min' : '' });
+    svg = E('svg', { viewBox: '-20 0 160 160', width: 150, height: 150, 'aria-hidden': 'true' });
+    const c = CHAR[cfg.who];
+    // body
+    if (c.style === 'prof') {
+      svg.append(E('rect', { x: 32, y: 150, width: 56, height: 12, fill: c.trousers }));
+      svg.append(E('path', { d: 'M24,152 L28,104 Q60,88 92,104 L96,152 Z', fill: c.shirt }));
+      svg.append(E('rect', { x: 26, y: 147, width: 68, height: 5, rx: 2, fill: '#3b3326' }));
+      svg.append(E('line', { x1: 60, y1: 96, x2: 60, y2: 147, stroke: '#8f88cf', 'stroke-width': 1.4 }));
+      [108, 120, 132, 143].forEach(y => svg.append(E('circle', { cx: 62.5, cy: y, r: 1.3, fill: '#7a73bd' })));
+      svg.append(E('rect', { x: 53, y: 80, width: 14, height: 15, rx: 4, fill: c.skin }));
+      svg.append(E('path', { d: 'M48,94 L60,104 L54,108 Z M72,94 L60,104 L66,108 Z', fill: '#bdb8ee', stroke: '#8f88cf', 'stroke-width': 0.8 }));
+    } else {
+      svg.append(E('path', { d: 'M28,160 L32,104 Q60,90 88,104 L92,160 Z', fill: c.shirt }));
+      svg.append(E('path', { d: 'M36,160 L40,106 L52,100 L60,126 L68,100 L80,106 L84,160 Z', fill: c.vest }));
+      svg.append(E('rect', { x: 41, y: 128, width: 38, height: 4, fill: '#e8e8e8', opacity: 0.85 }));
+      svg.append(E('rect', { x: 54, y: 78, width: 12, height: 16, rx: 4, fill: c.skin }));
+    }
+    // arms (lines updated each frame)
+    ['A', 'B'].forEach(s => { parts['up' + s] = E('line', { stroke: c.style === 'prof' ? c.skin : c.shirt, 'stroke-width': c.style === 'prof' ? 11 : 10, 'stroke-linecap': 'round' }); parts['lo' + s] = E('line', { stroke: c.skin, 'stroke-width': 8, 'stroke-linecap': 'round' }); parts['hand' + s] = E('circle', { r: 5.5, fill: c.skin }); svg.append(parts['up' + s], parts['lo' + s], parts['hand' + s]); });
+    parts.thumb = E('line', { stroke: c.skin, 'stroke-width': 4, 'stroke-linecap': 'round', opacity: 0 }); svg.append(parts.thumb);
+    // head group
+    const hd = E('g', {}); parts.head = hd;
+    if (c.long) hd.append(E('path', { d: 'M34,46 Q32,86 46,84 L74,84 Q88,86 86,46 Z', fill: c.hair }));
+    if (c.style === 'prof') {
+      hd.append(E('ellipse', { cx: 60, cy: 55, rx: 25, ry: 28, fill: c.skin }));
+      hd.append(E('ellipse', { cx: 35, cy: 57, rx: 4, ry: 6.5, fill: c.skin })); hd.append(E('ellipse', { cx: 85, cy: 57, rx: 4, ry: 6.5, fill: c.skin }));
+      // short, receding hair: sides and a thin crown
+      hd.append(E('path', { d: 'M35,50 Q34,32 46,25 Q60,19 74,25 Q86,32 85,50 L82,50 Q82,36 74,31 Q66,28 60,30 Q54,28 46,31 Q38,36 38,50 Z', fill: c.hair }));
+      hd.append(E('path', { d: 'M48,27 Q60,22 72,27 Q66,25 60,25.5 Q54,25 48,27 Z', fill: c.hair, opacity: 0.7 }));
+      hd.append(E('path', { d: 'M42,66 Q60,86 78,66 Q74,80 60,83 Q46,80 42,66 Z', fill: '#2a1d14', opacity: 0.18 }));
+    } else {
+      hd.append(E('ellipse', { cx: 60, cy: 54, rx: 23, ry: 26, fill: c.skin }));
+      hd.append(E('ellipse', { cx: 37, cy: 56, rx: 4, ry: 6, fill: c.skin })); hd.append(E('ellipse', { cx: 83, cy: 56, rx: 4, ry: 6, fill: c.skin }));
+      hd.append(E('path', { d: 'M38,44 Q42,28 60,28 Q78,28 82,44 Q72,36 60,38 Q48,36 38,44 Z', fill: c.hair }));
+      hd.append(E('path', { d: 'M34,36 Q36,14 60,13 Q84,14 86,36 Z', fill: c.hat })); hd.append(E('rect', { x: 30, y: 34, width: 60, height: 5, rx: 2.5, fill: c.hat })); hd.append(E('rect', { x: 57, y: 14, width: 6, height: 20, rx: 2, fill: '#f2b705' }));
+    }
+    // eyes, brows
+    parts.eyeL = E('ellipse', { cx: 51, cy: 53, rx: 3, ry: 3.6, fill: '#1b1b1b' }); parts.eyeR = E('ellipse', { cx: 69, cy: 53, rx: 3, ry: 3.6, fill: '#1b1b1b' });
+    parts.browL = E('path', { d: 'M46,46 Q51,43 56,46', stroke: c.hair, 'stroke-width': 2.2, fill: 'none', 'stroke-linecap': 'round' }); parts.browR = E('path', { d: 'M64,46 Q69,43 74,46', stroke: c.hair, 'stroke-width': 2.2, fill: 'none', 'stroke-linecap': 'round' });
+    hd.append(parts.eyeL, parts.eyeR, parts.browL, parts.browR);
+    hd.append(E('path', { d: 'M59,56 Q57,62 61,62', stroke: '#7a4a2e', 'stroke-width': 1.4, fill: 'none' }));
+    parts.mouth = E('ellipse', { cx: 60, cy: 69, rx: 5, ry: 1.2, fill: '#5a1f1f' }); parts.smile = E('path', { d: 'M53,68 Q60,73 67,68', stroke: '#5a1f1f', 'stroke-width': 2, fill: 'none', 'stroke-linecap': 'round' });
+    parts.teeth = E('rect', { x: 56, y: 66.5, width: 8, height: 2, rx: 1, fill: '#fff', opacity: 0 });
+    hd.append(parts.mouth, parts.teeth, parts.smile);
+    svg.append(hd);
+    bubble = h('div', { class: 'p-bubble' });
+    const ctr = h('div', { class: 'p-ctrl' },
+      h('button', { title: 'Explain this page', onclick: () => play() }, '▶'), h('button', { title: 'Stop', onclick: () => stop() }, '■'),
+      h('button', { title: 'Switch presenter (Dr. Vignesh / Asha / Arjun)', onclick: () => { const ks = Object.keys(CHAR); cfg.who = ks[(ks.indexOf(cfg.who) + 1) % ks.length]; save(); rebuild(); } }, '⇄'),
+      h('button', { title: 'Minimise', onclick: () => { cfg.min = !cfg.min; save(); root.classList.toggle('min', cfg.min); } }, '–'),
+      h('button', { title: 'Hide presenter (turn back on from the top bar 👩‍🏫)', onclick: () => { cfg.on = false; save(); stop(); root.remove(); document.body.classList.remove('has-presenter'); toast('Presenter hidden. Tap 👩‍🏫 in the top bar to bring it back.'); } }, '✕'));
+    const fig = h('div', { class: 'p-fig', title: 'Tap to hear this page explained', onclick: () => { if (cfg.min) { cfg.min = false; save(); root.classList.remove('min'); } else (speaking ? stop() : play()); } }); fig.append(svg);
+    root.append(bubble, fig, ctr);
+    document.body.append(root); document.body.classList.add('has-presenter');
+  }
+  function rebuild() { stop(); if (root) root.remove(); parts = {}; if (cfg.on) { build(); greet(); } }
+  // ---------- animation ----------
+  function armPts(sx, sy, th, ph, dir) { const r = d => d * Math.PI / 180, ex = sx + dir * 26 * Math.sin(r(th)), ey = sy + 26 * Math.cos(r(th)), hx = ex + dir * 23 * Math.sin(r(ph)), hy = ey + 23 * Math.cos(r(ph)); return [ex, ey, hx, hy]; }
+  function frame(t, dt) {
+    if (!root || !parts.upA) return;
+    gT += dt; const tgt = POSE[gesture] || POSE.idle, wob = Math.sin(gT * 6);
+    const goal = tgt.slice();
+    if (gesture === 'wave') goal[3] += 22 * Math.sin(gT * 9);
+    if (gesture === 'explain') { goal[0] += 8 * Math.sin(gT * 3); goal[2] += 8 * Math.sin(gT * 3 + 2); goal[1] += 10 * Math.sin(gT * 3.4); goal[3] += 10 * Math.sin(gT * 3.4 + 2); }
+    if (gesture === 'point') goal[1] += 3 * wob;
+    if (gesture === 'idle' || gesture === 'think') { goal[0] += 2 * Math.sin(gT * 1.2); goal[2] += 2 * Math.sin(gT * 1.3 + 1); }
+    for (let i = 0; i < 4; i++) cur[i] += (goal[i] - cur[i]) * Math.min(1, dt * 8);
+    const sx = CHAR[cfg.who].style === 'prof' ? 31 : 38, sx2 = 120 - sx; const [eA, fA, hA, gA] = armPts(sx, 100, cur[0], cur[1], -1), [eB, fB, hB, gB] = armPts(sx2, 100, cur[2], cur[3], 1);
+    const set = (el, a) => { for (const k in a) el.setAttribute(k, a[k]); };
+    set(parts.upA, { x1: sx, y1: 100, x2: eA, y2: fA }); set(parts.loA, { x1: eA, y1: fA, x2: hA, y2: gA }); set(parts.handA, { cx: hA, cy: gA });
+    set(parts.upB, { x1: sx2, y1: 100, x2: eB, y2: fB }); set(parts.loB, { x1: eB, y1: fB, x2: hB, y2: gB }); set(parts.handB, { cx: hB, cy: gB });
+    set(parts.thumb, { x1: hB, y1: gB, x2: hB, y2: gB - 9, opacity: gesture === 'thumbs' ? 1 : 0 });
+    const tilt = gesture === 'think' ? 7 : gesture === 'point' ? -6 : speaking ? 2.5 * Math.sin(gT * 2.2) : 1.5 * Math.sin(gT * 0.9);
+    parts.head.setAttribute('transform', `rotate(${tilt} 60 80)`);
+    const browUp = gesture === 'warn' || gesture === 'point' ? -2.5 : gesture === 'think' ? 1.5 : 0;
+    parts.browL.setAttribute('transform', `translate(0 ${browUp})`); parts.browR.setAttribute('transform', `translate(0 ${gesture === 'think' ? -2 : browUp})`);
+    // blink
+    blinkT -= dt; const bl = blinkT < 0.12 && blinkT > 0 ? 0.15 : 1; if (blinkT < 0) blinkT = 2 + Math.random() * 3;
+    parts.eyeL.setAttribute('ry', 3.6 * bl); parts.eyeR.setAttribute('ry', 3.6 * bl);
+    // lip sync: boundary-driven, with a fallback chatter while the engine speaks
+    if (speaking) { if (t - lastBoundary > 0.11) { const r = Math.random(); viseme = r < 0.3 ? 'small' : r < 0.55 ? 'open' : r < 0.75 ? 'wide' : r < 0.88 ? 'round' : 'closed'; lastBoundary = t - (Math.random() * 0.03); } }
+    else viseme = 'closed';
+    const V = { closed: [5, 0.8, 0], small: [4.5, 2.2, 0], open: [5.5, 4.4, 1], wide: [7.5, 3, 1], round: [3.6, 4.2, 0] }[viseme];
+    parts.mouth.setAttribute('rx', V[0]); parts.mouth.setAttribute('ry', V[1]); parts.teeth.setAttribute('opacity', V[2] * 0.9); parts.smile.setAttribute('opacity', viseme === 'closed' ? 1 : 0);
+  }
+  let lastT = performance.now() / 1000; (function loop(now) { const t = now / 1000; frame(t, Math.min(0.05, t - lastT)); lastT = t; requestAnimationFrame(loop); })(performance.now());
+  function visemeFor(word) { const w = (word || '').toLowerCase(); if (/[ou]/.test(w[1] || w[0] || '')) return 'round'; if (/[a]/.test(w)) return 'open'; if (/[ei]/.test(w)) return 'wide'; return 'small'; }
+  // ---------- speech ----------
+  function pickVoice() { try { const vs = speechSynthesis.getVoices(), c = CHAR[cfg.who]; const inIN = vs.filter(v => /en[-_]IN/i.test(v.lang)); return inIN.find(v => c.voice.test(v.name)) || vs.find(v => /^en/i.test(v.lang) && c.voice.test(v.name)) || inIN[0] || vs.find(v => /^en/i.test(v.lang)); } catch (e) { return null; } }
+  function clean(s) { return String(s).replace(/<[^>]+>/g, '').replace(/σ/g, 'sigma ').replace(/τ/g, 'tau ').replace(/×/g, ' times ').replace(/≥/g, ' at least ').replace(/≤/g, ' at most ').replace(/→/g, ', then ').replace(/[·•]/g, ', ').replace(/\s+/g, ' ').trim(); }
+  function highlight(target) { if (hl) hl.classList.remove('p-spot'); hl = null; if (!target) return; const el = typeof target === 'string' ? $(target) : target; if (el) { el.classList.add('p-spot'); hl = el; } }
+  function speakNext() {
+    if (qi >= queue.length) { speaking = false; gesture = 'idle'; highlight(null); bubble.innerHTML = '<b>Done!</b> Change an input and press ▶ again, or try the experiment.'; setTimeout(() => { if (!speaking) gesture = 'idle'; }, 400); return; }
+    const it = queue[qi++]; gesture = it.g || 'explain'; highlight(it.spot);
+    bubble.innerHTML = ''; bubble.append(h('span', null, it.text));
+    let u; try { u = new SpeechSynthesisUtterance(clean(it.text)); } catch (e) { speaking = false; toast('Speech not available in this browser'); return; }
+    const v = pickVoice(); if (v) u.voice = v; u.lang = (v && v.lang) || 'en-IN'; u.rate = cfg.rate; u.pitch = CHAR[cfg.who].pitch;
+    u.onstart = () => { speaking = true; }; u.onboundary = e => { if (e.name === 'word' || e.charIndex >= 0) { const w = u.text.slice(e.charIndex).split(/\s/)[0]; viseme = visemeFor(w); lastBoundary = performance.now() / 1000; } };
+    u.onend = () => { speaking = false; setTimeout(speakNext, 250); }; u.onerror = () => { speaking = false; setTimeout(speakNext, 100); };
+    speaking = true; speechSynthesis.speak(u);
+  }
+  function play() {
+    if (!cfg.on) return; try { speechSynthesis.cancel(); } catch (e) { }
+    queue = buildScript(); qi = 0; if (!queue.length) return; if (cfg.min) { cfg.min = false; root.classList.remove('min'); }
+    // some engines load voices lazily
+    if (typeof speechSynthesis === 'undefined') { bubble.textContent = queue.map(q => q.text).join(' '); return; }
+    speakNext();
+  }
+  function stop() { try { speechSynthesis.cancel(); } catch (e) { } queue = []; qi = 0; speaking = false; gesture = 'idle'; highlight(null); }
+  // ---------- page scripts ----------
+  function buildScript() {
+    const p = MD.pages[MD.current] || {}, F = window.FRIENDLY || { kid: {} }, kid = p.kid || F.kid[MD.current], out = [];
+    const strip = s => String(s || '').replace(/<[^>]+>/g, '');
+    out.push({ text: `${MD.current === 'home' ? 'Hello! I am ' + cfg.who + '. ' : ''}${kid ? strip(kid.what) : 'This page is about ' + strip(p.title) + '.'}`, g: 'greet', spot: '.kidbox' });
+    if (kid && kid.steps) kid.steps.forEach((s, i) => out.push({ text: `Step ${i + 1}. ${strip(s)}`, g: i === 0 ? 'point' : 'explain', spot: i === 0 ? '.grid2 > .card, .grid2 > div > .card' : '.kidbox' }));
+    const v = $('.verdict'); const ex = MD.explain;
+    if (ex) out.push({ text: 'Here is what the page says right now. ' + strip(ex), g: v && v.classList.contains('good') ? 'thumbs' : v && v.classList.contains('bad') ? 'warn' : 'point', spot: v || '.metrics' });
+    if ($('.dominance, .bars')) out.push({ text: 'Look at the bar chart. The orange bar is the failure mode that decides the size. That is the one to attack if you want a smaller part.', g: 'point', spot: '.bars' });
+    if ($('.effect')) out.push({ text: 'The effect table shows which input matters most. Big green or red numbers mean that input changes the answer a lot.', g: 'explain', spot: '.effect' });
+    if (kid && kid.try) out.push({ text: 'Try this. ' + strip(kid.try), g: 'think', spot: '.kid-try' });
+    out.push({ text: 'If you want the maths, open the equations panel at the bottom. Every symbol is explained there.', g: 'point', spot: '.eqpanel' });
+    return out;
+  }
+  function greet() { if (!root) return; gesture = 'wave'; setTimeout(() => { if (!speaking) gesture = 'idle'; }, 1600); const p = MD.pages[MD.current]; bubble.innerHTML = ''; bubble.append(h('span', null, `Hi, I'm ${cfg.who}! Tap ▶ and I'll explain ${p ? p.title.toLowerCase() : 'this page'}.`)); }
+  function onResult() { // a new result appeared: react with a gesture (no sound unless asked)
+    if (!root || speaking) return; const v = $('.verdict'); if (!v) return;
+    gesture = v.classList.contains('good') ? 'thumbs' : v.classList.contains('bad') ? 'warn' : 'think'; gT = 0;
+    clearTimeout(onResult._t); onResult._t = setTimeout(() => { if (!speaking) gesture = 'idle'; }, 1800);
+  }
+  function onPage() { stop(); if (!cfg.on) return; if (!root) build(); greet(); }
+  function toggle() { cfg.on = !cfg.on; save(); if (cfg.on) { if (!root || !root.isConnected) { parts = {}; build(); } greet(); } else { stop(); root && root.remove(); document.body.classList.remove('has-presenter'); } }
+  try { speechSynthesis.onvoiceschanged = () => { }; speechSynthesis.getVoices(); } catch (e) { }
+  return { onPage, onResult, play, stop, toggle, get on() { return cfg.on; } };
+})();

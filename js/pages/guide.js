@@ -60,6 +60,18 @@ MD.register('guide', {
         ['sewing', 'Mechanism timing', 'Speed and stitch length → needle acceleration, hook speed, feed speed, timing diagram.'],
         ['dynamics', 'Balancing', 'Needle-bar inertia force → counterweight on the main shaft (balancing tab).'],
         ['gearsplus', 'Hook drive', '2:1 bevel or belt drive from the main shaft to the hook shaft.'] ] },
+      { t: '🗼 Tower crane / lattice tower', steps: [
+        ['space3d', '3D model', 'Pick the crane mast + jib preset; set height, jib length, hook load and wind. Read the critical member and f₁.'],
+        ['space3d', 'Resize', 'If buckling governs, shorten panels (more panels) or use a larger-diameter tube; if yield governs, thicken the wall.'],
+        ['bolt', 'Foundation bolts', 'Leg uplift force → anchor bolt preload and separation check.'],
+        ['fracture', 'Weld cracks', 'Inspection interval for a fatigue crack at a chord weld from the wind stress range.'] ] },
+      { t: '🏎 Engine valve train', steps: [
+        ['kinematics', 'Cam profile', 'Lift, rise angle and motion law.'],
+        ['camdyn', 'Dynamics', 'Raise rpm until the follower leaves the cam (float); size the spring preload and rate for the redline.'],
+        ['spring', 'Valve spring', 'Check fatigue and surge frequency of the chosen spring.'] ] },
+      { t: '🚛 Truck suspension', steps: [
+        ['springsplus', 'Leaf spring', 'Axle load, span, number of leaves → stress, deflection and ride frequency.'],
+        ['fracture', 'Leaf crack tolerance', 'Critical crack size at the leaf stress.'] ] },
       { t: '🏗 Wall bracket / crane jib', steps: [
         ['structure', 'Jib preset', 'Load the wall-crane preset; read tie tension and jib compression.'],
         ['column', 'Compression member', 'Check the jib as a column (end conditions, eccentricity).'],
@@ -94,16 +106,19 @@ MD.register('guide', {
       ['Product system design: EV, self-balancing bike, sewing machine', 'yes', 'Products section'],
       ['Impact/shock loading', 'partial', 'via service factors only'],
       ['Bolted joints in shear / eccentric loading', 'partial', 'axial tension only'],
-      ['Creep and fracture mechanics', 'partial', 'warnings and case studies; no K_IC or creep-life calculation'],
-      ['3D structures and solid parts', 'partial', '2D frames/trusses only; out-of-plane buckling approximated with I_min'],
-      ['Gear rating to AGMA 2001 / ISO 6336', 'partial', 'Lewis + Buckingham (conservative) with a Hertz cross-check'],
-      ['Leaf & torsion springs, flywheels as stressed discs, cams with dynamics of follower train', 'no', 'planned'],
+      ['Creep and fracture mechanics (K_IC, Paris-law crack growth, Larson–Miller)', 'yes', 'Fracture & creep life'],
+      ['3D space trusses (towers, crane masts, roofs): static, member buckling, modes', 'yes', '3D space trusses'],
+      ['3D solid parts (continuum FEA)', 'no', 'use CAD-integrated FEA'],
+      ['Gear rating to AGMA 2001 (bending + pitting, Kv, KH, life factors)', 'yes', 'AGMA gear rating (ISO 6336 not implemented)'],
+      ['Leaf, helical torsion and torsion-bar springs', 'yes', 'Leaf, torsion & torsion-bar springs'],
+      ['Cam-follower dynamics: valve float, jump, train vibration', 'yes', 'Cam & valve-train dynamics'],
+      ['Flywheels as rotating stressed discs', 'no', 'planned'],
       ['Tolerances & fits, cost, manufacturability, seismic loads', 'no', 'outside current scope'],
     ];
     const tb = h('table', { class: 't' }, h('tr', null, h('th', null, 'Design aspect'), h('th', null, 'Status'), h('th', { style: { textAlign: 'left' } }, 'Where')));
     cov.forEach(([a, s, w]) => tb.append(h('tr', null, h('td', { style: { fontFamily: 'var(--sans)' } }, a), h('td', null, h('span', { class: 'pill', style: { background: s === 'yes' ? '#dcefdc' : s === 'partial' ? '#fdf0d5' : '#f6dcd8' } }, s === 'yes' ? '✓ covered' : s === 'partial' ? '◐ partial' : '✗ not yet')), h('td', { style: { textAlign: 'left', fontFamily: 'var(--sans)' } }, w))));
     main.append(h('div', { class: 'card' }, h('div', { class: 'tablewrap' }, tb)));
-    main.append(h('p', { class: 'small' }, 'Data limits: temperature/corrosion factors, V-belt and chain ratings are indicative. Gear checks use the conservative Lewis + Buckingham method (Indian university syllabus convention), not full AGMA 2001 / ISO 6336. Use the results for learning and preliminary sizing, then verify against codes and supplier data.'));
+    main.append(h('p', { class: 'small' }, 'Data limits: temperature/corrosion factors, V-belt and chain ratings are indicative. The Spur-gear page uses the conservative Lewis + Buckingham method (Indian university syllabus convention); the AGMA page applies the metric AGMA 2001 factors with indicative charts. Use the results for learning and preliminary sizing, then verify against codes and supplier data.'));
     explain('Each module takes your requirements on the left, shows pass or fail tiles, a bar chart of which failure mode governs, and a verdict. Recipes on this page list which modules to use, in order, for products like a bicycle drivetrain, motorcycle gearbox, conveyor drive, footbridge, engine and cam.');
   }
 });
