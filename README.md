@@ -8,7 +8,7 @@ Design is the reverse of analysis. MechDe connects the four subjects behind ever
 
 ## Built for beginners
 
-- An animated **presenter** (Dr. Vignesh, or Asha / Arjun) walks through each page with gestures, lip-synced speech and highlights.
+- An animated **presenter** (Dr. Vignesh, or Asha / Arjun) walks through each page with gestures, lip-synced speech and highlights. Narration uses recorded neural voices (Michael, US / Lewis, UK; [Kokoro-82M](https://github.com/hexgrad/kokoro), Apache-2.0) from `audio/`; live results use the device voice, or the optional in-browser Studio voice (`js/vendor/kokoro.web.js`). After editing page explanations, re-run `tools/collect.py` then `tools/render.py` to regenerate the clips.
 
 - **Simple / Expert** switch: beginners see only the key inputs; every input has an ⓘ plain-language explanation.
 - Every page opens with **What this page does** and a **Try this** experiment, and has a **📘 equations panel** (meaning of every symbol and what happens when each parameter changes) plus a live **🔬 effect-of-parameters** table.
