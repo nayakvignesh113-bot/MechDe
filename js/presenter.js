@@ -117,7 +117,7 @@ const Presenter = (() => {
   function visemeFor(word) { const w = (word || '').toLowerCase(); if (/[ou]/.test(w[1] || w[0] || '')) return 'round'; if (/[a]/.test(w)) return 'open'; if (/[ei]/.test(w)) return 'wide'; return 'small'; }
   // ---------- speech ----------
   // Voice choice. Browsers only offer the voices installed on the device, so we rank them.
-  const FEMALE = /female|woman|zira|samantha|heera|neerja|veena|kalpana|lekha|swara|aria|jenny|sonia|libby|natasha|clara|emma|ava\b|michelle|karen|moira|tessa|fiona|victoria|susan|hazel|catherine|serena|ana\b|aditi|raveena|kajal|google us english|google uk english female|google हिन्दी/i;
+  const FEMALE = /en-[a-z]{2}-x-(?:ahp|cxx|ena|enc|tpc|tpf|sfg|iob|iog|fis|gba|gbc|aua|auc|tpe)|female|woman|zira|samantha|heera|neerja|veena|kalpana|lekha|swara|aria|jenny|sonia|libby|natasha|clara|emma|ava\b|michelle|karen|moira|tessa|fiona|victoria|susan|hazel|catherine|serena|ana\b|aditi|raveena|kajal|google us english|google uk english female|google हिन्दी/i;
   // deep, warm male voices first (Edge "Natural" voices are the most human)
   const MALE_RANK = [/andrew.*natural/i, /guy.*natural/i, /davis.*natural/i, /christopher.*natural/i, /brian.*natural/i, /roger.*natural/i, /eric.*natural/i, /ryan.*natural/i, /thomas.*natural/i, /prabhat.*natural/i, /william.*natural/i,
     /google uk english male/i, /en-in-x-ene/i, /en-in-x-end/i, /en-gb-x-rjs/i, /en-gb-x-gbd/i, /en-us-x-iom/i, /en-us-x-tpd/i, /en-us-x-iol/i, /daniel/i, /arthur/i, /aaron/i, /gordon/i, /ralph/i, /fred/i, /rishi/i, /ravi/i, /hemant/i, /prabhat/i, /david/i, /mark/i, /george/i, /james/i, /alex\b/i, /\bmale\b/i];
@@ -138,7 +138,7 @@ const Presenter = (() => {
     const nr = h('div', { class: 'toolbar' }, [['michael', 'Michael (US)'], ['lewis', 'Lewis (UK)'], ['device', 'Phone voice']].map(([k, l]) => h('button', { class: 'btn ' + (cfg.narr === k ? '' : 'ghost'), onclick: (e) => { cfg.narr = k; save(); $$('button', nr).forEach(b => b.className = 'btn ghost'); e.target.className = 'btn'; sample(); try { $$('.p-deep').forEach(b => b.textContent = { michael: '🔊 Voice: Michael', lewis: '🔊 Voice: Lewis', device: '🔈 Voice: phone' }[k]); } catch (er) { } } }, l)));
     const st = h('input', { type: 'checkbox' }); st.checked = !!cfg.studio; st.onchange = () => { cfg.studio = st.checked; save(); if (st.checked) studioLoad().catch(() => { }); };
     modal(h('div', null, h('h3', null, '🎙 Narrator'),
-      h('p', { class: 'small' }, 'Michael and Lewis are recorded neural voices: page explanations play as natural speech on every device. Live results (numbers that change with your inputs) are spoken by the phone voice, unless Studio voice is on.'), nr,
+      h('p', { class: 'small' }, 'Michael and Lewis are recorded neural voices: page explanations play as natural speech on every device. Live results (numbers that change with your inputs) are shown in the speech bubble, so the voice never changes mid-way. Turn on Studio voice to have them spoken in the same voice.'), nr,
       h('label', { class: 'small', style: { display: 'flex', gap: '8px', alignItems: 'flex-start', margin: '10px 0' } }, st, h('span', null, h('b', null, 'Studio voice for live results. '), 'Runs the same neural voice inside your browser so results sound identical. Downloads about 90 MB once; on a phone each result can take a few seconds to prepare. Needs a modern browser.')),
       h('h3', { style: { marginTop: '14px' } }, '📱 Phone voice'),
       h('p', { class: 'small' }, `Now using: ${cur ? cur.name : 'browser default'}. The list shows the voices installed on this device. The most natural deep male voices are the Microsoft “Natural” ones in Edge (Andrew, Guy, Davis, Christopher); on Chrome, “Google UK English Male”; on Mac/iPhone, Daniel or Arthur (add more in Settings → Accessibility → Spoken content → Voices).`),
@@ -155,7 +155,7 @@ const Presenter = (() => {
   function highlight(target) { if (hl) hl.classList.remove('p-spot'); hl = null; if (!target) return; const el = typeof target === 'string' ? $(target) : target; if (el) { el.classList.add('p-spot'); hl = el; } }
   // ---------- narrators: recorded neural voices (Kokoro, Apache-2.0), optional in-browser Studio voice, phone voice ----------
   const NARR = { michael: { label: 'Michael (US)', kid: 'am_michael' }, lewis: { label: 'Lewis (UK)', kid: 'bm_lewis' } };
-  const AUD_V = '1';
+  const AUD_V = '2';
   function hash(str) { let x = 0x811c9dc5; for (let i = 0; i < str.length; i++) { x ^= str.charCodeAt(i); x = Math.imul(x, 0x01000193); } return (x >>> 0).toString(16).padStart(8, '0'); }
   const man = {};
   function manifest(n) { if (!man[n]) man[n] = fetch(`audio/${n}/index.json?v=${AUD_V}`).then(r => r.ok ? r.json() : []).then(a => new Set(a)).catch(() => new Set()); return man[n]; }
@@ -167,9 +167,9 @@ const Presenter = (() => {
     return aud;
   }
   function level() { if (!analyser) return -1; analyser.getByteTimeDomainData(abuf); let s2 = 0; for (let i = 0; i < abuf.length; i++) { const d = (abuf[i] - 128) / 128; s2 += d * d; } return Math.sqrt(s2 / abuf.length); }
-  function playUrl(url, my, revoke, onFail) {
+  function playUrl(url, my, revoke, onFail, after) {
     const a = audioEl(); try { actx && actx.state === 'suspended' && actx.resume(); } catch (e) { }
-    a.onended = () => { audOn = false; speaking = false; if (revoke) URL.revokeObjectURL(url); if (my === run && queue.length) setTimeout(speakNext, 250); };
+    a.onended = () => { audOn = false; speaking = false; if (revoke) URL.revokeObjectURL(url); if (my !== run) return; if (after) return after(); if (queue.length) setTimeout(speakNext, 250); };
     a.onerror = () => { audOn = false; if (my === run) onFail(); };
     a.src = url; a.playbackRate = cfg.rate || 1; audOn = true; speaking = true;
     const pr = a.play(); if (pr && pr.catch) pr.catch(() => { audOn = false; if (my === run) onFail(); });
@@ -184,6 +184,7 @@ const Presenter = (() => {
       .catch(e => { studioP = null; toast('Studio voice could not load here; using the phone voice for results.'); throw e; });
     return studioP;
   }
+  function readPause(txt, my) { speaking = false; gesture = 'point'; const ms = Math.min(9000, Math.max(2500, txt.length * 55)); setTimeout(() => { if (my === run) speakNext(); }, ms); }
   function phoneSay(txt, my) {
     let u; try { u = new SpeechSynthesisUtterance(txt); } catch (e) { speaking = false; toast('Speech not available in this browser'); return; }
     const v = pickVoice(); if (v) u.voice = v; u.lang = (v && v.lang) || 'en-IN'; u.rate = rateNow(); u.pitch = pitchNow();
@@ -199,11 +200,14 @@ const Presenter = (() => {
     if (useNeural()) {
       const set = await manifest(cfg.narr); if (my !== run) return;
       const hh = hash(txt);
-      if (set.has(hh)) return playUrl(`audio/${cfg.narr}/${hh}.mp3?v=${AUD_V}`, my, false, () => phoneSay(txt, my));
+      if (set.has(hh)) return playUrl(`audio/${cfg.narr}/${hh}.mp3?v=${AUD_V}`, my, false, () => readPause(txt, my));
       if (cfg.studio) {
-        if (studioReady) { gesture = 'think'; try { const a = await studioReady.generate(txt, { voice: NARR[cfg.narr].kid, speed: 0.95 }); if (my !== run) return; gesture = it.g || 'explain'; return playUrl(URL.createObjectURL(a.toBlob()), my, true, () => phoneSay(txt, my)); } catch (e) { } }
+        if (studioReady) { gesture = 'think'; try { const a = await studioReady.generate(txt, { voice: NARR[cfg.narr].kid, speed: 0.95 }); if (my !== run) return; gesture = it.g || 'explain'; return playUrl(URL.createObjectURL(a.toBlob()), my, true, () => readPause(txt, my)); } catch (e) { } }
         else studioLoad().catch(() => { });
       }
+      // never switch to the phone voice mid-explanation: say a recorded line in the same voice, leave the text in the bubble, and give time to read it
+      const key = it.dyn ? 'result' : 'miss';
+      return playUrl(`audio/${cfg.narr}/${key}.mp3?v=${AUD_V}`, my, false, () => readPause(txt, my), () => readPause(txt, my));
     }
     phoneSay(txt, my);
   }
