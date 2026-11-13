@@ -173,3 +173,9 @@ table.fx td{vertical-align:top}
 @media (max-width:900px){ #presenter .p-fig{width:104px;height:104px} #presenter .p-fig svg{width:104px;height:104px} #presenter .p-bubble{max-width:200px;font-size:12.5px} #presenter{right:6px;bottom:6px} }
 @media (prefers-reduced-motion: reduce){ .p-spot{animation:none} }
 @media (min-width:901px){ body.has-presenter #main{padding-right:170px} }
+
+/* phone: keep the top bar inside the screen; the bar scrolls sideways instead of widening the page */
+html,body{overflow-x:hidden}
+#topbar .tb-right{min-width:0;overflow-x:auto;scrollbar-width:none;margin-left:auto}
+#topbar .tb-right::-webkit-scrollbar{display:none}
+@media (max-width:520px){ #topbar .chip{padding:4px 7px;font-size:12px;white-space:nowrap} #topbar .brand{font-size:16px} }
