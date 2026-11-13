@@ -162,7 +162,10 @@ table.fx td{vertical-align:top}
 #presenter .p-ctrl{display:flex;gap:3px;margin-top:2px}
 #presenter .p-ctrl button{border:1px solid #cbd5e1;background:#fff;border-radius:7px;width:28px;height:26px;cursor:pointer;font-size:13px;padding:0}
 #presenter .p-ctrl button:first-child{background:var(--accent);color:#fff;border-color:var(--accent);width:40px}
-#presenter.min .p-bubble, #presenter.min .p-ctrl{display:none}
+#presenter .p-ctrl2{display:flex;gap:3px;margin-top:3px}
+#presenter .p-ctrl2 button{border:1px solid #cbd5e1;background:#fff;border-radius:7px;height:26px;cursor:pointer;font-size:12px;padding:0 8px;font-weight:600}
+#presenter .p-ctrl2 .p-deep.on{background:#1b2430;color:#fff;border-color:#1b2430}
+#presenter.min .p-bubble, #presenter.min .p-ctrl, #presenter.min .p-ctrl2{display:none}
 #presenter.min .p-fig{width:76px;height:76px}
 #presenter.min .p-fig svg{width:76px;height:76px}
 .p-spot{outline:3px solid #f08c2e !important;outline-offset:3px;border-radius:10px;transition:outline-color .3s;animation:pspot 1.2s ease-in-out infinite}

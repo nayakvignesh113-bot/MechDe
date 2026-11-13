@@ -8,6 +8,9 @@ const Presenter = (() => {
     Arjun: { skin: '#a8693f', hair: '#1d130c', shirt: '#3c6b3a', vest: '#f08c2e', hat: '#ffd23f', sex: 'm', pitch: 0.85, rateK: 0.95, long: false },
   };
   let cfg = Object.assign({ on: true, who: 'Dr. Vignesh', rate: 1, min: window.innerWidth < 700 }, store('presenter') || {});
+  if (cfg.ver !== 2) { cfg.ver = 2; cfg.who = 'Dr. Vignesh'; cfg.deep = true; cfg.voiceName = null; cfg.pitchUser = null; cfg.rateUser = null; }
+  if (cfg.deep == null) cfg.deep = true;
+  const sayName = () => cfg.who.replace(/^Dr\.\s*/, 'Doctor ');
   const save = () => store('presenter', cfg);
   let root, svg, bubble, parts = {}, gesture = 'idle', gT = 0, speaking = false, lastBoundary = 0, viseme = 'closed', queue = [], qi = 0, script = [], blinkT = 2, hl = null;
   const NS = 'http://www.w3.org/2000/svg', E = (t, a) => { const e = document.createElementNS(NS, t); for (const k in a) e.setAttribute(k, a[k]); return e; };
@@ -65,11 +68,15 @@ const Presenter = (() => {
     const ctr = h('div', { class: 'p-ctrl' },
       h('button', { title: 'Explain this page', onclick: () => play() }, '▶'), h('button', { title: 'Stop', onclick: () => stop() }, '■'),
       h('button', { title: 'Switch presenter (Dr. Vignesh / Asha / Arjun)', onclick: () => { const ks = Object.keys(CHAR); cfg.who = ks[(ks.indexOf(cfg.who) + 1) % ks.length]; cfg.voiceName = null; cfg.pitchUser = null; cfg.rateUser = null; save(); rebuild(); } }, '⇄'),
-      h('button', { title: 'Choose the voice, depth and speed', onclick: () => voicePanel() }, '🎙'),
+
       h('button', { title: 'Minimise', onclick: () => { cfg.min = !cfg.min; save(); root.classList.toggle('min', cfg.min); } }, '–'),
       h('button', { title: 'Hide presenter (turn back on from the top bar 👩‍🏫)', onclick: () => { cfg.on = false; save(); stop(); root.remove(); document.body.classList.remove('has-presenter'); toast('Presenter hidden. Tap 👩‍🏫 in the top bar to bring it back.'); } }, '✕'));
     const fig = h('div', { class: 'p-fig', title: 'Tap to hear this page explained', onclick: () => { if (cfg.min) { cfg.min = false; save(); root.classList.remove('min'); } else (speaking ? stop() : play()); } }); fig.append(svg);
-    root.append(bubble, fig, ctr);
+    const deepBtn = h('button', { class: 'p-deep' + (cfg.deep ? ' on' : ''), title: 'Deeper, slower narrator voice' });
+    const deepLbl = () => { deepBtn.textContent = cfg.deep ? '🔊 Deep voice: ON' : '🔈 Deep voice: OFF'; deepBtn.classList.toggle('on', !!cfg.deep); };
+    deepBtn.onclick = () => { cfg.deep = !cfg.deep; cfg.pitchUser = null; cfg.rateUser = null; save(); deepLbl(); sample(); }; deepLbl();
+    const ctr2 = h('div', { class: 'p-ctrl2' }, deepBtn, h('button', { class: 'p-vset', title: 'Choose the voice, depth and speed', onclick: () => voicePanel() }, '⚙ Voice'));
+    root.append(bubble, fig, ctr, ctr2);
     document.body.append(root); document.body.classList.add('has-presenter');
   }
   function rebuild() { stop(); if (root) root.remove(); parts = {}; if (cfg.on) { build(); greet(); } }
@@ -109,7 +116,7 @@ const Presenter = (() => {
   const FEMALE = /female|woman|zira|samantha|heera|neerja|veena|kalpana|lekha|swara|aria|jenny|sonia|libby|natasha|clara|emma|ava\b|michelle|karen|moira|tessa|fiona|victoria|susan|hazel|catherine|serena|ana\b|aditi|raveena|kajal|google us english|google uk english female|google हिन्दी/i;
   // deep, warm male voices first (Edge "Natural" voices are the most human)
   const MALE_RANK = [/andrew.*natural/i, /guy.*natural/i, /davis.*natural/i, /christopher.*natural/i, /brian.*natural/i, /roger.*natural/i, /eric.*natural/i, /ryan.*natural/i, /thomas.*natural/i, /prabhat.*natural/i, /william.*natural/i,
-    /google uk english male/i, /daniel/i, /arthur/i, /aaron/i, /gordon/i, /ralph/i, /fred/i, /rishi/i, /ravi/i, /hemant/i, /prabhat/i, /david/i, /mark/i, /george/i, /james/i, /alex\b/i, /\bmale\b/i];
+    /google uk english male/i, /en-in-x-ene/i, /en-in-x-end/i, /en-gb-x-rjs/i, /en-gb-x-gbd/i, /en-us-x-iom/i, /en-us-x-tpd/i, /en-us-x-iol/i, /daniel/i, /arthur/i, /aaron/i, /gordon/i, /ralph/i, /fred/i, /rishi/i, /ravi/i, /hemant/i, /prabhat/i, /david/i, /mark/i, /george/i, /james/i, /alex\b/i, /\bmale\b/i];
   function voices() { try { return speechSynthesis.getVoices().filter(v => /^en/i.test(v.lang)); } catch (e) { return []; } }
   function pickVoice() {
     const vs = voices(), c = CHAR[cfg.who];
@@ -122,17 +129,18 @@ const Presenter = (() => {
     const sel = h('select', { class: 'inp' }, h('option', { value: '' }, 'Auto (best ' + (c.sex === 'm' ? 'deep male' : 'female') + ' voice on this device)'), vs.map(v => h('option', { value: v.name }, `${v.name} (${v.lang})${FEMALE.test(v.name) ? '' : ''}`)));
     sel.value = cfg.voiceName || '';
     const mk = (lab, key, lo, hi, def) => { const r = h('input', { type: 'range', min: lo, max: hi, step: 0.01, value: cfg[key] != null ? cfg[key] : def }), o = h('span', { class: 'mono' }, (+r.value).toFixed(2)); r.oninput = () => { cfg[key] = +r.value; o.textContent = (+r.value).toFixed(2); save(); }; return h('div', { class: 'field' }, h('label', null, lab, ' ', o), r); };
-    const test = () => { try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance('Every machine begins with a question. What must it do, and how might it fail? Let us find out together.'); const v = pickVoice(); if (v) { u.voice = v; u.lang = v.lang; } u.pitch = pitchNow(); u.rate = rateNow(); speechSynthesis.speak(u); } catch (e) { } };
+    const test = () => sample();
     sel.onchange = () => { cfg.voiceName = sel.value || null; save(); test(); };
     modal(h('div', null, h('h3', null, '🎙 Presenter voice'),
       h('p', { class: 'small' }, `Now using: ${cur ? cur.name : 'browser default'}. The list shows the voices installed on this device. The most natural deep male voices are the Microsoft “Natural” ones in Edge (Andrew, Guy, Davis, Christopher); on Chrome, “Google UK English Male”; on Mac/iPhone, Daniel or Arthur (add more in Settings → Accessibility → Spoken content → Voices).`),
       h('div', { class: 'field sel wide' }, h('label', null, 'Voice'), sel),
-      mk('Depth (lower = deeper)', 'pitchUser', 0.5, 1.3, c.pitch), mk('Speed', 'rateUser', 0.6, 1.3, c.rateK),
+      mk('Depth (lower = deeper)', 'pitchUser', 0.5, 1.3, pitchNow()), mk('Speed', 'rateUser', 0.6, 1.3, rateNow() / (cfg.rate || 1)),
       h('div', { class: 'toolbar' }, h('button', { class: 'btn', onclick: test }, '▶ Test'), h('button', { class: 'btn ghost', onclick: () => { cfg.voiceName = null; cfg.pitchUser = null; cfg.rateUser = null; save(); $('#modal').classList.add('hidden'); } }, '↺ Reset voice'))));
   }
-  const pitchNow = () => cfg.pitchUser != null ? cfg.pitchUser : CHAR[cfg.who].pitch;
-  const rateNow = () => (cfg.rateUser != null ? cfg.rateUser : CHAR[cfg.who].rateK) * (cfg.rate || 1);
-  function clean(s) { return String(s).replace(/<[^>]+>/g, '').replace(/σ/g, 'sigma ').replace(/τ/g, 'tau ').replace(/×/g, ' times ').replace(/≥/g, ' at least ').replace(/≤/g, ' at most ').replace(/→/g, ', then ').replace(/[·•]/g, ', ').replace(/\s+/g, ' ').trim(); }
+  function sample() { try { speechSynthesis.cancel(); const u = new SpeechSynthesisUtterance('Hello, I am ' + sayName() + '. Every machine begins with a question: what must it do, and how might it fail?'); const v = pickVoice(); if (v) { u.voice = v; u.lang = v.lang; } u.pitch = pitchNow(); u.rate = rateNow(); speaking = true; u.onboundary = e => { viseme = visemeFor(u.text.slice(e.charIndex).split(/\s/)[0]); lastBoundary = performance.now() / 1000; }; u.onend = u.onerror = () => { speaking = false; }; speechSynthesis.speak(u); } catch (e) { } }
+  const pitchNow = () => cfg.pitchUser != null ? cfg.pitchUser : CHAR[cfg.who].sex === 'm' && cfg.deep ? 0.6 : CHAR[cfg.who].pitch;
+  const rateNow = () => (cfg.rateUser != null ? cfg.rateUser : CHAR[cfg.who].sex === 'm' && cfg.deep ? 0.85 : CHAR[cfg.who].rateK) * (cfg.rate || 1);
+  function clean(s) { return String(s).replace(/<[^>]+>/g, '').replace(/\bDr\.\s*/g, 'Doctor ').replace(/σ/g, 'sigma ').replace(/τ/g, 'tau ').replace(/×/g, ' times ').replace(/≥/g, ' at least ').replace(/≤/g, ' at most ').replace(/→/g, ', then ').replace(/[·•]/g, ', ').replace(/\s+/g, ' ').trim(); }
   function highlight(target) { if (hl) hl.classList.remove('p-spot'); hl = null; if (!target) return; const el = typeof target === 'string' ? $(target) : target; if (el) { el.classList.add('p-spot'); hl = el; } }
   function speakNext() {
     if (qi >= queue.length) { speaking = false; gesture = 'idle'; highlight(null); bubble.innerHTML = '<b>Done!</b> Change an input and press ▶ again, or try the experiment.'; setTimeout(() => { if (!speaking) gesture = 'idle'; }, 400); return; }
@@ -156,7 +164,7 @@ const Presenter = (() => {
   function buildScript() {
     const p = MD.pages[MD.current] || {}, F = window.FRIENDLY || { kid: {} }, kid = p.kid || F.kid[MD.current], out = [];
     const strip = s => String(s || '').replace(/<[^>]+>/g, '');
-    out.push({ text: `${MD.current === 'home' ? 'Hello! I am ' + cfg.who + '. ' : ''}${kid ? strip(kid.what) : 'This page is about ' + strip(p.title) + '.'}`, g: 'greet', spot: '.kidbox' });
+    out.push({ text: `${MD.current === 'home' ? 'Hello! I am ' + sayName() + '. ' : ''}${kid ? strip(kid.what) : 'This page is about ' + strip(p.title) + '.'}`, g: 'greet', spot: '.kidbox' });
     if (kid && kid.steps) kid.steps.forEach((s, i) => out.push({ text: `Step ${i + 1}. ${strip(s)}`, g: i === 0 ? 'point' : 'explain', spot: i === 0 ? '.grid2 > .card, .grid2 > div > .card' : '.kidbox' }));
     const v = $('.verdict'); const ex = MD.explain;
     if (ex) out.push({ text: 'Here is what the page says right now. ' + strip(ex), g: v && v.classList.contains('good') ? 'thumbs' : v && v.classList.contains('bad') ? 'warn' : 'point', spot: v || '.metrics' });
